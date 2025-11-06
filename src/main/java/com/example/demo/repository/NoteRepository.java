@@ -25,4 +25,8 @@ public class NoteRepository {
     public void update(NoteDTO note) {
         sql.update("Note.update", note);
     }
+
+    public void deleteById(int id) {
+        sql.delete("Note.deleteById", id);
+    }
 }

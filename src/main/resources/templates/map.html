@@ -63,6 +63,7 @@
                         // create a non-editable popup for each saved note
                         var html = '<div class="popup-note"><strong>메모</strong><p>' + escapeHtml(n.content).replace(/\n/g, '<br>') + '</p>';
                         if (n.createdAt) html += '<div class="popup-meta">등록: ' + escapeHtml(n.createdAt) + '</div>';
+                        if (n.id != null) html += '<div style="margin-top:6px"><button class="popup-delete-btn" type="button">삭제</button></div>';
                         html += '</div>';
                         var p = new maplibregl.Popup({ closeOnClick: false })
                             .setLngLat([n.lng, n.lat])
@@ -75,6 +76,26 @@
 
                         // attempt to attach close-button cleanup in a safe way
                         tryAttachCloseListener(p);
+                        // attach delete handler to the popup's delete button (best-effort)
+                        (function(popup, note){
+                            setTimeout(function(){
+                                try {
+                                    var el = (typeof popup.getElement === 'function') ? popup.getElement() : (popup._container || null);
+                                    if (!el) return;
+                                    var del = el.querySelector && el.querySelector('.popup-delete-btn');
+                                    if (!del) return;
+                                    if (del.__hasDeleteListener) return; del.__hasDeleteListener = true;
+                                    del.addEventListener('click', function(ev){
+                                        try { ev.stopPropagation(); ev.preventDefault(); } catch(e){}
+                                        if (!note || note.id == null) return;
+                                        if (!confirm('정말로 이 노트를 삭제하시겠습니까?')) return;
+                                        fetch('/api/notes/' + encodeURIComponent(note.id), { method: 'DELETE' })
+                                            .then(function(res){ if (!res.ok) throw new Error('삭제 실패'); try{ popup.remove(); }catch(e){} removePopupFromArray(popup); if (note && note.id != null) delete seenNoteIds[note.id]; })
+                                            .catch(function(err){ console.error('삭제 오류', err); alert('삭제에 실패했습니다. 콘솔을 확인하세요.'); });
+                                    });
+                                } catch (err) { /* ignore */ }
+                            }, 50);
+                        })(p, n);
                     });
                 })
                 .catch(function(err){

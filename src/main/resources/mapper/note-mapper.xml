@@ -27,4 +27,8 @@
         WHERE id = #{id}
     </update>
 
+    <delete id="deleteById" parameterType="int">
+        DELETE FROM notes WHERE id = #{id}
+    </delete>
+
 </mapper>
