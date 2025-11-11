@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
-import java.util.HashMap;
+
 import java.util.List;
 import java.util.Map;
 
@@ -27,8 +27,8 @@ public class BoardRepository {
     public Long findBoardIdByGrid(int gridX, int gridY) {
         String sql = "SELECT id FROM boards WHERE grid_x = ? AND grid_y = ? LIMIT 1";
         try {
-            Number n = jdbc.queryForObject(sql, new Object[]{gridX, gridY}, Number.class);
-            return n == null ? null : n.longValue();
+            Long id = jdbc.queryForObject(sql, Long.class, gridX, gridY);
+            return id;
         } catch (org.springframework.dao.EmptyResultDataAccessException ex) {
             return null;
         }

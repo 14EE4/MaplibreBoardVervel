@@ -11,6 +11,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/boards")
@@ -28,7 +29,7 @@ public class BoardController {
     public ResponseEntity<Map<String,Object>> createBoard(@RequestBody BoardDTO b) {
         Long id = boardService.createBoard(b);
         Map<String,Object> resp = new HashMap<>(); resp.put("id", id);
-        return ResponseEntity.created(URI.create("/api/boards/" + id)).body(resp);
+        return ResponseEntity.created(Objects.requireNonNull(URI.create("/api/boards/" + id))).body(resp);
     }
 
     @GetMapping("/{boardId}/posts")
@@ -40,7 +41,7 @@ public class BoardController {
     public ResponseEntity<Map<String,Object>> createPost(@PathVariable("boardId") Long boardId, @RequestBody PostDTO p) {
         Long id = boardService.createPost(boardId, p);
         Map<String,Object> resp = new HashMap<>(); resp.put("id", id);
-        return ResponseEntity.created(URI.create("/api/boards/" + boardId + "/posts/" + id)).body(resp);
+        return ResponseEntity.created(Objects.requireNonNull(URI.create("/api/boards/" + boardId + "/posts/" + id))).body(resp);
     }
 
     @GetMapping("/{boardId}/activity")
