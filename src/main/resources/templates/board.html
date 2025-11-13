@@ -92,7 +92,9 @@
                 ctrl.appendChild(cancelBtn);
 
                 editBtn.onclick = function(){
-                    const pw = pwdInput.value || null;
+                    const pwRaw = pwdInput.value || '';
+                    const pw = pwRaw.trim();
+                    if (!pw) { alert('수정을 위해 비밀번호를 입력하세요.'); return; }
                     const newContent = ta.value.trim();
                     if (!newContent) { alert('내용을 입력하세요.'); return; }
                     fetch('/api/boards/' + encodeURIComponent(resolvedBoardId) + '/posts/' + encodeURIComponent(p.id), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw, content: newContent, author: (document.getElementById('author').value||null) }) })
@@ -106,7 +108,9 @@
 
             // delete flow
             deleteBtn.addEventListener('click', function(){
-                var pw = pwdInput.value || null;
+                var pwRaw = pwdInput.value || '';
+                var pw = pwRaw.trim();
+                if (!pw) { alert('삭제를 위해 비밀번호를 입력하세요.'); return; }
                 if (!confirm('정말로 삭제하시겠습니까?')) return;
                 fetch('/api/boards/' + encodeURIComponent(resolvedBoardId) + '/posts/' + encodeURIComponent(p.id), { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) })
                     .then(function(res){ if (!res.ok) return res.json().then(function(j){ throw j; }); return res.json(); })
