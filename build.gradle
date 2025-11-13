@@ -8,11 +8,9 @@ group = 'com.example.demo'
 version = '0.0.1-SNAPSHOT'
 description = 'Demo project for Spring Boot'
 
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
-}
+// Use the JVM running Gradle (assumes JAVA_HOME or PATH is set to a suitable JDK)
+// If you prefer to use Gradle toolchains, re-enable the block and ensure a matching JDK is available or
+// configure toolchain download repositories.
 
 configurations {
 	compileOnly {
