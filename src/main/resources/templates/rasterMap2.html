@@ -41,9 +41,10 @@ const map = new maplibregl.Map({
 try { map.getCanvas().style.cursor = 'crosshair'; } catch (e) { console.warn('cursor set failed', e); }
 // Grid overlay controls and renderer
 // UI: toggle + grid size selector (degrees)
+// 격자 크기 고정: 5도
 var gridState = {
     enabled: true,
-    sizeDeg: 1
+    sizeDeg: 5
 };
 
 // create control container
@@ -69,7 +70,11 @@ var sizes = [0.25, 0.5, 1, 2, 5, 10, 20];
 sizes.forEach(function(s){ var opt = document.createElement('option'); opt.value = s; opt.text = s + '°'; if (s===gridState.sizeDeg) opt.selected = true; sizeSelect.appendChild(opt); });
 sizeSelect.style.marginLeft = '6px';
 
-var sizeLabel = document.createElement('span'); sizeLabel.textContent = 'Size:'; sizeLabel.style.marginLeft = '8px';
+var sizeLabel = document.createElement('span'); sizeLabel.textContent = 'Size (고정):'; sizeLabel.style.marginLeft = '8px';
+
+// 고정: 선택기 비활성화
+sizeSelect.value = gridState.sizeDeg;
+sizeSelect.disabled = true;
 
 gridControl.appendChild(toggle); gridControl.appendChild(label); gridControl.appendChild(sizeLabel); gridControl.appendChild(sizeSelect);
 document.body.appendChild(gridControl);
@@ -152,7 +157,8 @@ function updateGrid() {
 
 // wire UI events
 toggle.addEventListener('change', function() { gridState.enabled = !!toggle.checked; updateGrid(); });
-sizeSelect.addEventListener('change', function() { gridState.sizeDeg = parseFloat(sizeSelect.value) || 1; updateGrid(); });
+// 선택기는 비활성화되어 있으므로 이벤트는 유지할 필요 없음
+sizeSelect.addEventListener('change', function() { gridState.sizeDeg = parseFloat(sizeSelect.value) || 5; updateGrid(); });
 
 map.on('load', function() { ensureGridLayer(); updateGrid(); });
 map.on('moveend', updateGrid);
@@ -160,6 +166,41 @@ map.on('zoomend', updateGrid);
 
 // initial call (in case map already loaded)
 try { updateGrid(); } catch (e) { console.warn('grid init failed', e); }
+
+// 클릭 시 해당 격자 생성(테이블 + boards 레코드) 후 새 창으로 게시판 열기
+map.on('click', function(e) {
+    if (!gridState.enabled) return;
+    try {
+        var lng = e.lngLat.lng;
+        var lat = e.lngLat.lat;
+        var size = gridState.sizeDeg;
+        // grid indices starting at (-180,-90) origin -> (0,0) ...
+        var gridX = Math.floor((lng + 180) / size);
+        var gridY = Math.floor((lat + 90) / size);
+
+        // center of cell
+        var centerLng = gridX * size - 180 + size/2;
+        var centerLat = gridY * size - 90 + size/2;
+
+        // Call backend to ensure table and board record
+        fetch('/api/boards/grid/' + encodeURIComponent(gridX) + '/' + encodeURIComponent(gridY) + '/ensure', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ center_lng: centerLng, center_lat: centerLat })
+        }).then(function(res) {
+            if (!res.ok) throw new Error('서버 에러');
+            return res.json();
+        }).then(function(data) {
+            var id = data && data.id ? data.id : null;
+            if (id) {
+                window.open('/board?id=' + encodeURIComponent(id), '_blank');
+            } else {
+                // fallback: open boards with grid params
+                window.open('/boards?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY), '_blank');
+            }
+        }).catch(function(err) { console.error('grid ensure error', err); alert('게시판 생성/열기에 실패했습니다. 콘솔 확인'); });
+    } catch (err) { console.error('grid click handler failed', err); }
+});
 
 </script>
 </body>

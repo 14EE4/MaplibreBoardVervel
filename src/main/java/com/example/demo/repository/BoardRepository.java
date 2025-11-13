@@ -75,4 +75,22 @@ public class BoardRepository {
         return jdbc.queryForList(sql, boardId, hours);
     }
 
+    /**
+     * Ensure the posts table for a specific grid exists.
+     * Table name pattern: posts_grid_{gridX}_{gridY}
+     */
+    public void ensurePostsTableForGrid(int gridX, int gridY) {
+        String tableName = "posts_grid_" + gridX + "_" + gridY;
+        // Basic validation: gridX/gridY are integers so building identifier is safe
+        String sql = "CREATE TABLE IF NOT EXISTS `" + tableName + "` ("
+                + "id BIGINT PRIMARY KEY AUTO_INCREMENT,"
+                + "board_id BIGINT,"
+                + "author VARCHAR(255),"
+                + "content TEXT,"
+                + "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+                + "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+        jdbc.execute(sql);
+    }
+
 }

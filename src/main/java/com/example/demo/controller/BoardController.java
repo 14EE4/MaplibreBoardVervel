@@ -20,6 +20,24 @@ public class BoardController {
     @Autowired
     private BoardService boardService;
 
+    @PostMapping("/grid/{gridX}/{gridY}/ensure")
+    public ResponseEntity<Map<String,Object>> ensureBoardForGrid(@PathVariable("gridX") int gridX,
+                                                                  @PathVariable("gridY") int gridY,
+                                                                  @RequestBody(required = false) Map<String,Object> body) {
+        Double centerLng = null, centerLat = null;
+        if (body != null) {
+            Object lng = body.get("center_lng");
+            Object lat = body.get("center_lat");
+            if (lng instanceof Number) centerLng = ((Number) lng).doubleValue();
+            else if (lng instanceof String) try { centerLng = Double.parseDouble((String) lng); } catch(Exception e){}
+            if (lat instanceof Number) centerLat = ((Number) lat).doubleValue();
+            else if (lat instanceof String) try { centerLat = Double.parseDouble((String) lat); } catch(Exception e){}
+        }
+        Long id = boardService.ensureBoardForGrid(gridX, gridY, centerLng, centerLat);
+        Map<String,Object> resp = new HashMap<>(); resp.put("id", id);
+        return ResponseEntity.ok(resp);
+    }
+
     @GetMapping
     public ResponseEntity<List<Map<String,Object>>> listBoards() {
         return ResponseEntity.ok(boardService.listBoards());
