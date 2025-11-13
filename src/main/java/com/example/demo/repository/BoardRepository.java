@@ -52,11 +52,14 @@ public class BoardRepository {
     }
 
     public List<Map<String,Object>> findPostsByBoardId(Long boardId){
-        return jdbc.queryForList("SELECT id, board_id, author, content, created_at, updated_at FROM posts WHERE board_id = ? ORDER BY created_at DESC", boardId);
+        String table = getPostsTableForBoard(boardId);
+        String sql = "SELECT id, board_id, author, content, created_at, updated_at FROM `" + table + "` WHERE board_id = ? ORDER BY created_at DESC";
+        return jdbc.queryForList(sql, boardId);
     }
 
     public Long createPost(Long boardId, PostDTO p) {
-        String sql = "INSERT INTO posts (board_id, author, content) VALUES (?, ?, ?)";
+        String table = getPostsTableForBoard(boardId);
+        String sql = "INSERT INTO `" + table + "` (board_id, author, content) VALUES (?, ?, ?)";
         KeyHolder kh = new GeneratedKeyHolder();
         jdbc.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -70,9 +73,27 @@ public class BoardRepository {
     }
 
     public List<Map<String,Object>> getActivity(Long boardId, int hours) {
+        String table = getPostsTableForBoard(boardId);
         String sql = "SELECT DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00') AS hour_bucket, COUNT(*) AS cnt " +
-                "FROM posts WHERE board_id = ? AND created_at >= NOW() - INTERVAL ? HOUR GROUP BY hour_bucket ORDER BY hour_bucket";
+                "FROM `" + table + "` WHERE board_id = ? AND created_at >= NOW() - INTERVAL ? HOUR GROUP BY hour_bucket ORDER BY hour_bucket";
         return jdbc.queryForList(sql, boardId, hours);
+    }
+
+    private String getPostsTableForBoard(Long boardId) {
+        try {
+            List<Map<String,Object>> rows = jdbc.queryForList("SELECT grid_x, grid_y FROM boards WHERE id = ?", boardId);
+            if (rows == null || rows.isEmpty()) return "posts";
+            Map<String,Object> r = rows.get(0);
+            Object gx = r.get("grid_x");
+            Object gy = r.get("grid_y");
+            if (gx == null || gy == null) return "posts";
+            int ix = ((Number)gx).intValue();
+            int iy = ((Number)gy).intValue();
+            return "posts_grid_" + ix + "_" + iy;
+        } catch (Exception ex) {
+            // fallback to default posts table on any error
+            return "posts";
+        }
     }
 
     /**
