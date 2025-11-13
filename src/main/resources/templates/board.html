@@ -154,11 +154,15 @@
         if (!resolvedBoardId) { alert('게시판이 선택되지 않았습니다. URL에 id 또는 grid_x/grid_y를 지정하세요.'); return; }
         var author = document.getElementById('author').value.trim();
         var content = document.getElementById('content').value.trim();
+        var pwRaw = document.getElementById('postPassword').value || '';
+        var pw = pwRaw.trim();
         if (!content) { alert('내용을 입력하세요.'); return; }
         var payload = { author: author || null, content: content };
+        // include password only when provided (client sends plain 4-digit PIN; server will hash it)
+        if (pw) payload.password = pw;
         fetch('/api/boards/' + encodeURIComponent(resolvedBoardId) + '/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
             .then(function(res){ if (!res.ok) throw new Error('post failed'); return res.json(); })
-            .then(function(saved){ document.getElementById('content').value = ''; loadPosts(); })
+            .then(function(saved){ document.getElementById('content').value = ''; document.getElementById('postPassword').value = ''; loadPosts(); })
             .catch(function(err){ console.error('post failed', err); alert('작성 실패. 콘솔을 확인하세요.'); });
     }
 
