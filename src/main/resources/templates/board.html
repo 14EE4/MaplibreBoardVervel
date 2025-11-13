@@ -30,6 +30,10 @@
         <h3>새 글 작성</h3>
         <input id="author" placeholder="작성자 (선택)" style="width:100%; padding:6px; box-sizing:border-box; margin-bottom:6px" />
         <textarea id="content" placeholder="내용을 입력하세요..."></textarea>
+        <div style="margin-top:6px; display:flex; gap:8px; align-items:center">
+            <input id="postPassword" placeholder="4자리 비밀번호 (선택)" maxlength="4" style="width:180px; padding:6px; box-sizing:border-box" />
+            <small style="color:#666">* 비밀번호를 설정하면 해당 비밀번호로 수정/삭제 가능</small>
+        </div>
         <br>
         <button id="submitPost">전송</button>
     </div>
@@ -63,8 +67,54 @@
         list.forEach(function(p){
             const div = document.createElement('div'); div.className = 'post';
             const head = document.createElement('div'); head.innerHTML = (p.author?('<strong>'+escapeHtml(p.author)+'</strong>'):'<strong>익명</strong>') + ' <span class="time">' + (p.createdAt?formatTime(p.createdAt):'') + '</span>';
-            const body = document.createElement('div'); body.style.marginTop = '6px'; body.innerHTML = '<div>' + escapeHtml((p.content||'')).replace(/\n/g,'<br>') + '</div>';
-            div.appendChild(head); div.appendChild(body);
+            const body = document.createElement('div'); body.style.marginTop = '6px'; body.innerHTML = '<div class="post-content">' + escapeHtml((p.content||'')).replace(/\n/g,'<br>') + '</div>';
+
+            // password input and action buttons
+            const ctrl = document.createElement('div'); ctrl.style.marginTop = '8px';
+            const pwdInput = document.createElement('input'); pwdInput.type = 'password'; pwdInput.placeholder = '비밀번호'; pwdInput.maxLength = 4; pwdInput.style.marginRight = '8px'; pwdInput.style.padding = '6px';
+            pwdInput.style.width = '120px';
+            const editBtn = document.createElement('button'); editBtn.type = 'button'; editBtn.textContent = '수정'; editBtn.style.marginRight = '6px';
+            const deleteBtn = document.createElement('button'); deleteBtn.type = 'button'; deleteBtn.textContent = '삭제';
+            ctrl.appendChild(pwdInput); ctrl.appendChild(editBtn); ctrl.appendChild(deleteBtn);
+
+            // edit flow
+            editBtn.addEventListener('click', function(){
+                // enter edit mode
+                if (div.querySelector('.editing')) return;
+                const contentDiv = div.querySelector('.post-content');
+                const current = p.content || '';
+                const ta = document.createElement('textarea'); ta.value = current; ta.style.width='100%'; ta.style.height='120px';
+                ta.className = 'editing';
+                contentDiv.parentNode.replaceChild(ta, contentDiv);
+                // change buttons
+                editBtn.textContent = '저장';
+                const cancelBtn = document.createElement('button'); cancelBtn.type='button'; cancelBtn.textContent='취소'; cancelBtn.style.marginLeft='6px';
+                ctrl.appendChild(cancelBtn);
+
+                editBtn.onclick = function(){
+                    const pw = pwdInput.value || null;
+                    const newContent = ta.value.trim();
+                    if (!newContent) { alert('내용을 입력하세요.'); return; }
+                    fetch('/api/boards/' + encodeURIComponent(resolvedBoardId) + '/posts/' + encodeURIComponent(p.id), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw, content: newContent, author: (document.getElementById('author').value||null) }) })
+                        .then(function(res){ if (!res.ok) return res.json().then(function(j){ throw j; }); return res.json(); })
+                        .then(function(){ loadPosts(); })
+                        .catch(function(err){ console.error('update failed', err); alert((err && err.error) ? err.error : '수정 실패(비밀번호 확인)'); });
+                };
+
+                cancelBtn.addEventListener('click', function(){ loadPosts(); });
+            });
+
+            // delete flow
+            deleteBtn.addEventListener('click', function(){
+                var pw = pwdInput.value || null;
+                if (!confirm('정말로 삭제하시겠습니까?')) return;
+                fetch('/api/boards/' + encodeURIComponent(resolvedBoardId) + '/posts/' + encodeURIComponent(p.id), { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) })
+                    .then(function(res){ if (!res.ok) return res.json().then(function(j){ throw j; }); return res.json(); })
+                    .then(function(){ loadPosts(); })
+                    .catch(function(err){ console.error('delete failed', err); alert((err && err.error) ? err.error : '삭제 실패(비밀번호 확인)'); });
+            });
+
+            div.appendChild(head); div.appendChild(body); div.appendChild(ctrl);
             postsEl.appendChild(div);
         });
     }

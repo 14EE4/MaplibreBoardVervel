@@ -57,7 +57,8 @@ public class BoardController {
 
     @PostMapping("/{boardId}/posts")
     public ResponseEntity<Map<String,Object>> createPost(@PathVariable("boardId") Long boardId, @RequestBody PostDTO p) {
-        Long id = boardService.createPost(boardId, p);
+        // use service method that hashes password if provided
+        Long id = boardService.createPostWithPassword(boardId, p);
         Map<String,Object> resp = new HashMap<>(); resp.put("id", id);
         return ResponseEntity.created(Objects.requireNonNull(URI.create("/api/boards/" + boardId + "/posts/" + id))).body(resp);
     }
