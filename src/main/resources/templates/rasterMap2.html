@@ -231,7 +231,6 @@ try { updateGrid(); } catch (e) { console.warn('grid init failed', e); }
 
 // 클릭 시 해당 격자 생성(테이블 + boards 레코드) 후 새 창으로 게시판 열기
 map.on('click', function(e) {
-    if (!gridState.enabled) return;
     try {
         var lng = e.lngLat.lng;
         var lat = e.lngLat.lat;
