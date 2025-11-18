@@ -1,0 +1,84 @@
+const { query } = require('../../lib/db')
+
+// Posts API
+// GET /api/posts?board_id=1  => list posts for board (if board_id provided) or all posts
+// POST /api/posts  => create { board_id, author, content, password }
+// PUT /api/posts   => update { id, author, content, password }
+// DELETE /api/posts?id=ID => delete
+
+export default async function handler(req, res) {
+  const { method } = req
+  try {
+    if (method === 'GET') {
+      const { board_id } = req.query
+      if (board_id) {
+        const result = await query('SELECT * FROM posts WHERE board_id=$1 ORDER BY created_at DESC', [Number(board_id)])
+        return res.status(200).json(result.rows)
+      }
+      const result = await query('SELECT * FROM posts ORDER BY created_at DESC')
+      return res.status(200).json(result.rows)
+    }
+
+    if (method === 'POST') {
+      const { board_id, author, content, password } = req.body
+      if (!board_id || !content) return res.status(400).json({ error: 'board_id and content required' })
+
+      // transaction: insert post and increment boards.posts_count
+      const client = await (await require('../../lib/db').pool).connect()
+      try {
+        await client.query('BEGIN')
+        const insert = await client.query(
+          'INSERT INTO posts(board_id, author, content, password) VALUES($1,$2,$3,$4) RETURNING *',
+          [board_id, author || null, content, password || null]
+        )
+        await client.query('UPDATE boards SET posts_count = posts_count + 1 WHERE id = $1', [board_id])
+        await client.query('COMMIT')
+        return res.status(201).json(insert.rows[0])
+      } catch (err) {
+        await client.query('ROLLBACK')
+        throw err
+      } finally {
+        client.release()
+      }
+    }
+
+    if (method === 'PUT') {
+      const { id, author, content, password } = req.body
+      if (!id || !content) return res.status(400).json({ error: 'id and content required' })
+      const result = await query('UPDATE posts SET author=$1, content=$2, password=$3, updated_at=now() WHERE id=$4 RETURNING *', [author || null, content, password || null, id])
+      if (result.rowCount === 0) return res.status(404).json({ error: 'not found' })
+      return res.status(200).json(result.rows[0])
+    }
+
+    if (method === 'DELETE') {
+      const { id } = req.query
+      if (!id) return res.status(400).json({ error: 'id required' })
+
+      // transaction: delete post and decrement boards.posts_count
+      const client = await (await require('../../lib/db').pool).connect()
+      try {
+        await client.query('BEGIN')
+        const del = await client.query('DELETE FROM posts WHERE id=$1 RETURNING *', [Number(id)])
+        if (del.rowCount === 0) {
+          await client.query('ROLLBACK')
+          return res.status(404).json({ error: 'not found' })
+        }
+        const boardId = del.rows[0].board_id
+        await client.query('UPDATE boards SET posts_count = GREATEST(posts_count - 1, 0) WHERE id = $1', [boardId])
+        await client.query('COMMIT')
+        return res.status(200).json(del.rows[0])
+      } catch (err) {
+        await client.query('ROLLBACK')
+        throw err
+      } finally {
+        client.release()
+      }
+    }
+
+    res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE'])
+    res.status(405).end(`Method ${method} Not Allowed`)
+  } catch (err) {
+    console.error('posts API error', err)
+    res.status(500).json({ error: 'internal_error' })
+  }
+}
