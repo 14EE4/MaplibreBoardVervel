@@ -195,6 +195,34 @@ psql "<DATABASE_URL>" -f migrations/postgres_create_tables.sql
 - GitHub에 커밋/푸시한 뒤 Vercel에서 repo를 연결하면 자동 빌드됩니다.
 - Vercel 프로젝트 설정 > Environment Variables에 `DATABASE_URL`을 추가하세요 (Production/Preview/Development 적절히 설정).
 
+### Neon 사용 (간단 가이드)
+
+Neon을 사용하려면 아래 절차를 따르세요. Neon은 서버리스용 Postgres를 제공하므로 Vercel + Next.js와 잘 어울립니다.
+
+1. Neon 계정 생성 및 프로젝트 생성
+  - https://neon.tech 에서 계정 생성 후 새 프로젝트(데이터베이스) 생성
+  - 프로젝트 생성 후 Dashboard → Credentials 에서 connection string(URI)을 복사합니다. (형식: `postgresql://user:pass@host:port/dbname?sslmode=require`)
+
+2. 로컬에서 마이그레이션 실행
+  - PowerShell에서:
+    ```powershell
+    $env:DATABASE_URL='postgresql://user:pass@host:port/dbname?sslmode=require'; npm.cmd run migrate
+    ```
+  - 또는 Neon의 SQL editor에 `migrations/postgres_create_tables.sql` 내용을 붙여 실행해도 됩니다.
+
+3. Vercel에 연결
+  - Vercel 대시보드 → 프로젝트 → Settings → Environment Variables 에 접속
+  - Key: `DATABASE_URL`, Value: (Neon에서 복사한 connection string), Environment: Production/Preview/Development 필요에 따라 추가
+
+4. 배포 후 확인
+  - GitHub에 커밋/푸시하면 Vercel이 자동 빌드합니다. 배포가 완료되면 `/api/boards` 및 `/api/notes` 엔드포인트를 호출해 데이터베이스 연동을 확인하세요.
+
+주의 및 권장사항:
+- Neon은 서버리스 환경에 적합한 연결 옵션을 제공합니다. Neon이 권장하는 connection string(보통 `sslmode=require` 포함)을 사용하세요.
+- Vercel 같은 서버리스 플랫폼에서 DB 연결을 효율적으로 사용하려면 커넥션 풀링/재사용이 중요합니다. 이 리포지토리의 `lib/db.js`는 전역 캐시된 `pg.Pool`을 사용해 재사용하도록 구현되어 있습니다.
+- 배포 후 연결 오류가 발생하면 `sslmode` 파라미터나 Vercel에서 제공되는 환경변수 값이 정확한지(공백/특수문자) 확인하세요.
+
+
 5) 테스트
 - 로컬: `npm install` 후 `DATABASE_URL=<your_url> npm run dev` 로 실행하세요.
 - Vercel: 배포 후 `/api/boards` 및 `/api/notes`를 호출하여 동작 확인.
