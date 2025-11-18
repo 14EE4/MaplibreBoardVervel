@@ -133,3 +133,38 @@ TODO
 - 장기 운영 환경에서는 다수의 동적 테이블 대신 단일 `posts` 테이블에 `grid_x/grid_y` 컬럼을 두는 설계가 더 관리하기 쉽습니다.
 
 필요하시면 위 권장 작업들 중 우선순위에 따라 바로 적용해 드리겠습니다.
+
+---
+
+## Next.js 마이그레이션 안내 (간단한 시작 가이드)
+
+이 저장소를 Vercel에 올리기 위해 Spring Boot를 Next.js로 단계적으로 마이그레이션하는 최소 스캐폴드를 함께 추가했습니다 (프론트엔드와 API 라우트 포함).
+
+빠른 시작:
+
+1. Node(또는 npm)가 설치되어 있는지 확인하세요.
+
+2. 의존성 설치 및 개발 서버 실행:
+
+```powershell
+npm install
+npm run dev
+```
+
+3. 브라우저에서 http://localhost:3000 에 접속하면 간단한 보드 리스트와 API 연동 예시를 확인할 수 있습니다.
+
+API 설명(임시, 인메모리 저장소):
+- `GET /api/boards` : 게시판 목록 조회
+- `POST /api/boards` : 게시판 생성 (body: { name })
+- `GET /api/notes` : 노트 목록 조회
+- `POST /api/notes` : 노트 생성 (body: { lng, lat, content })
+- `PUT /api/notes` : 노트 수정 (body: { id, lng, lat, content })
+- `DELETE /api/notes?id=ID` : 노트 삭제
+
+주의: 현재 API는 데모용으로 서버 메모리에 저장하는 방식입니다. 실제 DB 연동(예: Supabase, PlanetScale, Cloud SQL)을 원하시면 DB 모듈과 환경변수를 추가해 드리겠습니다.
+
+Vercel 배포:
+- 이 프로젝트는 Next.js 표준 프로젝트 구조를 따르고 있어 Vercel에 연결하면 자동으로 빌드/배포됩니다.
+- Vercel에서 환경변수(예: DB 연결 문자열)를 설정하려면 프로젝트 설정 > Environment Variables에서 추가하세요.
+
+추가 지원이 필요하면 어떤 범위로(프론트만 정적화 / 전체 API + DB 연동 / 외부 DB 연동) 진행할지 알려주세요. 바로 이어서 필요한 파일을 완성하고 로컬 검증을 도와드리겠습니다.
