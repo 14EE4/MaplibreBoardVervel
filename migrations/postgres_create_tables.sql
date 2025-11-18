@@ -1,0 +1,15 @@
+-- Postgres migration for boards and notes
+CREATE TABLE IF NOT EXISTS boards (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS notes (
+  id SERIAL PRIMARY KEY,
+  lng DOUBLE PRECISION NOT NULL,
+  lat DOUBLE PRECISION NOT NULL,
+  content TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  board_id INTEGER REFERENCES boards(id) ON DELETE SET NULL
+);

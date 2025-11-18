@@ -168,3 +168,39 @@ Vercel 배포:
 - Vercel에서 환경변수(예: DB 연결 문자열)를 설정하려면 프로젝트 설정 > Environment Variables에서 추가하세요.
 
 추가 지원이 필요하면 어떤 범위로(프론트만 정적화 / 전체 API + DB 연동 / 외부 DB 연동) 진행할지 알려주세요. 바로 이어서 필요한 파일을 완성하고 로컬 검증을 도와드리겠습니다.
+
+---
+
+## PostgreSQL 연동 및 Vercel 배포 가이드 (Supabase 권장)
+
+1) 빠른 개요
+- 이 리포지토리는 Next.js + API Routes로 구성되어 있으며, API는 기본적으로 `DATABASE_URL` 환경변수로 전달되는 PostgreSQL에 연결하도록 구현되어 있습니다.
+- 로컬에서 개발할 때는 `DATABASE_URL`을 설정하거나, Supabase(또는 다른 Postgres) 인스턴스를 만들어 연결하세요.
+
+2) Supabase(추천)로 빠르게 시작하기
+- https://supabase.com 에서 계정 생성 → 프로젝트 생성(무료 플랜 있음)
+- Database 탭에서 connection string을 복사하세요 (예: postgres://user:pass@db.host:5432/dbname)
+- Vercel에서 환경변수 `DATABASE_URL`에 이 값을 설정합니다.
+
+3) 마이그레이션(테이블 생성)
+- 저장소에 `migrations/postgres_create_tables.sql` 파일을 추가했습니다. Supabase SQL editor 또는 psql을 통해 실행하세요.
+
+예: psql 사용 시 로컬에서
+```powershell
+# Windows PowerShell 예 (psql이 설치되어 있어야 함)
+psql "<DATABASE_URL>" -f migrations/postgres_create_tables.sql
+```
+
+4) Vercel 설정
+- GitHub에 커밋/푸시한 뒤 Vercel에서 repo를 연결하면 자동 빌드됩니다.
+- Vercel 프로젝트 설정 > Environment Variables에 `DATABASE_URL`을 추가하세요 (Production/Preview/Development 적절히 설정).
+
+5) 테스트
+- 로컬: `npm install` 후 `DATABASE_URL=<your_url> npm run dev` 로 실행하세요.
+- Vercel: 배포 후 `/api/boards` 및 `/api/notes`를 호출하여 동작 확인.
+
+6) 보안 및 권장사항
+- DB 연결 문자열은 절대 공개 저장소에 커밋하지 마세요(.env 파일도 마찬가지).
+- 프로덕션에서는 DB 사용자에 최소 권한을 부여하고 비밀번호 관리를 권장합니다.
+
+원하시면 제가 Supabase 프로젝트 생성부터 마이그레이션 실행, Vercel 환경변수 설정 가이드까지 단계별로 도와드리겠습니다. 어느 부분을 도와드릴까요? (예: Supabase 프로젝트 생성 / 로컬 마이그레이션 / Vercel에 Env 추가)
