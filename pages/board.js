@@ -178,13 +178,14 @@ export default function Board() {
       <section id="newPost">
         <h3>새 글 작성</h3>
         <input id="author" placeholder="작성자 (선택)" style={{ width: '100%', padding: 6, boxSizing: 'border-box', marginBottom: 6 }} value={author} onChange={e=>setAuthor(e.target.value)} />
-        <textarea id="content" placeholder="내용을 입력하세요..." style={{ width: '100%', height: 100 }} value={content} onChange={e=>setContent(e.target.value)} />
+        <textarea id="content" placeholder="내용을 입력하세요..." style={{ width: '100%', height: 100 }} value={content} onChange={e=>setContent(e.target.value)} onKeyDown={e=>{ if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }} />
         <div style={{ marginTop: 6, display: 'flex', gap: 8, alignItems: 'center' }}>
           <input id="postPassword" placeholder="4자리 비밀번호 (선택)" maxLength={4} style={{ width: 180, padding: 6, boxSizing: 'border-box' }} value={postPassword} onChange={e=>setPostPassword(e.target.value)} />
           <small style={{ color: '#666' }}>* 비밀번호를 설정하면 해당 비밀번호로 수정/삭제 가능</small>
         </div>
         <div style={{ marginTop: 8 }}>
           <button id="submitPost" onClick={submitPost}>전송</button>
+          <span style={{ marginLeft: 8, color: '#666', fontSize: 12 }}>Ctrl+Enter로 전송</span>
         </div>
       </section>
 
@@ -196,7 +197,7 @@ export default function Board() {
             <div dangerouslySetInnerHTML={{ __html: (p.author ? `<strong>${escapeHtml(p.author)}</strong>` : '<strong>익명</strong>') + ' <span style="color:#888;font-size:12px">' + (p.createdAt ? formatTime(p.createdAt) : '') + '</span>' }} />
             <div style={{ marginTop: 6 }}>
               {editing[p.id] && editing[p.id].editing ? (
-                <textarea style={{ width: '100%', height: 120 }} value={editing[p.id].value} onChange={ev=>setEditing(prev=>({ ...prev, [p.id]: { editing: true, value: ev.target.value } }))} />
+                <textarea style={{ width: '100%', height: 120 }} value={editing[p.id].value} onChange={ev=>setEditing(prev=>({ ...prev, [p.id]: { editing: true, value: ev.target.value } }))} onKeyDown={ev=>{ if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); saveEdit(p.id); } }} />
               ) : (
                 <div className="post-content" dangerouslySetInnerHTML={{ __html: escapeHtml(p.content || '').replace(/\n/g, '<br>') }} />
               )}
