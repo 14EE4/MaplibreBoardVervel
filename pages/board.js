@@ -84,14 +84,37 @@ export default function Board() {
     if (!contentVal) { alert('내용을 입력하세요.'); return }
     const payload = { author: authorVal, content: contentVal }
     if (pw) payload.password = pw
+
+    setLoading(true)
     try {
-      const res = await fetch(`/api/boards/${encodeURIComponent(resolvedBoardId)}/posts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-      if (!res.ok) throw new Error('post failed')
-      await res.json()
+      const res = await fetch(`/api/boards/${encodeURIComponent(resolvedBoardId)}/posts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      const text = await res.text()
+      let body = null
+      try { body = text ? JSON.parse(text) : null } catch (e) { body = { error: text } }
+
+      if (!res.ok) {
+        console.error('post failed', res.status, body)
+        const msg = (body && body.error) ? `작성 실패: ${body.error}` : `작성 실패 (HTTP ${res.status})`
+        alert(msg)
+        return
+      }
+
+      // 성공 처리
+      console.log('post success', body)
       setContent('')
       setPostPassword('')
       loadPosts(resolvedBoardId)
-    } catch (err) { console.error('post failed', err); alert('작성 실패. 콘솔을 확인하세요.') }
+    } catch (err) {
+      console.error('post failed', err)
+      alert('작성 실패. 콘솔을 확인하세요.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function verifyAndEdit(postId) {
