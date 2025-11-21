@@ -28,6 +28,9 @@ export default function Home() {
         <p>
           <Link href="/board">Create / open board</Link>
         </p>
+        <p>
+          <Link href="/index.html">퍼블릭 인덱스 페이지 보기</Link>
+        </p>
       </section>
     </main>
   )
