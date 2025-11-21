@@ -1,4 +1,4 @@
-const { query, pool } = require('../../../../../lib/db')
+const { query, pool } = require('../../../../../../lib/db')
 
 export default async function handler(req, res) {
   const { method } = req
