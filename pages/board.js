@@ -180,7 +180,7 @@ export default function Board() {
         <input id="author" placeholder="작성자 (선택)" style={{ width: '100%', padding: 6, boxSizing: 'border-box', marginBottom: 6 }} value={author} onChange={e=>setAuthor(e.target.value)} />
         <textarea id="content" placeholder="내용을 입력하세요..." style={{ width: '100%', height: 100 }} value={content} onChange={e=>setContent(e.target.value)} onKeyDown={e=>{ if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }} />
         <div style={{ marginTop: 6, display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input id="postPassword" placeholder="4자리 비밀번호 (선택)" maxLength={4} style={{ width: 180, padding: 6, boxSizing: 'border-box' }} value={postPassword} onChange={e=>setPostPassword(e.target.value)} />
+          <input id="postPassword" placeholder="4자리 비밀번호 (선택)" maxLength={4} style={{ width: 180, padding: 6, boxSizing: 'border-box' }} value={postPassword} onChange={e=>setPostPassword(e.target.value)} onKeyDown={e=>{ if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submitPost(); } }} />
           <small style={{ color: '#666' }}>* 비밀번호를 설정하면 해당 비밀번호로 수정/삭제 가능</small>
         </div>
         <div style={{ marginTop: 8 }}>
@@ -203,7 +203,7 @@ export default function Board() {
               )}
             </div>
             <div style={{ marginTop: 8 }}>
-              <input id={`pwd-${p.id}`} type="password" placeholder="비밀번호" maxLength={4} style={{ marginRight: 8, padding: 6, width: 120 }} />
+              <input id={`pwd-${p.id}`} type="password" placeholder="비밀번호" maxLength={4} style={{ marginRight: 8, padding: 6, width: 120 }} onKeyDown={ev=>{ if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); if (editing[p.id] && editing[p.id].editing) { saveEdit(p.id); } else { verifyAndEdit(p.id); } } }} />
               {editing[p.id] && editing[p.id].editing ? (
                 <>
                   <button onClick={()=>saveEdit(p.id)}>저장</button>
