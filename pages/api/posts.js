@@ -1,7 +1,7 @@
-const { query } = require('../../lib/db')
+const { query, pool } = require('../../lib/db')
 const crypto = require('crypto')
 
-// Posts API
+// Posts API (unified posts table)
 // GET /api/posts?board_id=1  => list posts for board (if board_id provided) or all posts
 // POST /api/posts  => create { board_id, author, content, password }
 // PUT /api/posts   => update { id, author, content, password }
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     if (method === 'GET') {
       const { board_id } = req.query
       if (board_id) {
-        const result = await query('SELECT * FROM posts WHERE board_id=$1 ORDER BY created_at DESC', [Number(board_id)])
+        const result = await query('SELECT * FROM posts WHERE board_id = $1 ORDER BY created_at DESC', [Number(board_id)])
         return res.status(200).json(result.rows)
       }
       const result = await query('SELECT * FROM posts ORDER BY created_at DESC')
@@ -28,13 +28,11 @@ export default async function handler(req, res) {
       const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
 
       // transaction: insert post and increment boards.posts_count
-      const client = await (await require('../../lib/db').pool).connect()
+      const client = await (await pool).connect()
       try {
         await client.query('BEGIN')
-        const insert = await client.query(
-          'INSERT INTO posts(board_id, author, content, password) VALUES($1,$2,$3,$4) RETURNING *',
-          [board_id, author || null, content, hashed]
-        )
+        const insertSql = 'INSERT INTO posts (board_id, author, content, password) VALUES($1,$2,$3,$4) RETURNING *'
+        const insert = await client.query(insertSql, [board_id, author || null, content, hashed])
         await client.query('UPDATE boards SET posts_count = posts_count + 1 WHERE id = $1', [board_id])
         await client.query('COMMIT')
         return res.status(201).json(insert.rows[0])
@@ -50,8 +48,9 @@ export default async function handler(req, res) {
       const { id, author, content, password } = req.body
       if (!id || !content) return res.status(400).json({ error: 'id and content required' })
       const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
+
       const result = await query('UPDATE posts SET author=$1, content=$2, password=$3, updated_at=now() WHERE id=$4 RETURNING *', [author || null, content, hashed, id])
-      if (result.rowCount === 0) return res.status(404).json({ error: 'not found' })
+      if (!result || result.rowCount === 0) return res.status(404).json({ error: 'not found' })
       return res.status(200).json(result.rows[0])
     }
 
@@ -63,8 +62,8 @@ export default async function handler(req, res) {
       if (!id) return res.status(400).json({ error: 'id required' })
 
       const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
-      // check stored password
-      const existing = await query('SELECT password FROM posts WHERE id = $1', [Number(id)])
+
+      const existing = await query('SELECT password, board_id FROM posts WHERE id = $1', [Number(id)])
       if (!existing || existing.rowCount === 0) return res.status(404).json({ error: 'not found' })
       const stored = existing.rows[0].password
       if (!((stored == null && hashed == null) || (stored != null && stored === hashed))) {
