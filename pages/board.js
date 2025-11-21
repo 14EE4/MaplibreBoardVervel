@@ -34,7 +34,8 @@ export default function Board() {
     if (!boardId) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/boards/${encodeURIComponent(boardId)}/posts`)
+      // use centralized posts API which accepts a board_id query param
+      const res = await fetch(`/api/posts?board_id=${encodeURIComponent(boardId)}`)
       const list = await res.json()
       setPosts(Array.isArray(list) ? list : [])
       setMetaText('')
@@ -87,10 +88,12 @@ export default function Board() {
 
     setLoading(true)
     try {
-      const res = await fetch(`/api/boards/${encodeURIComponent(resolvedBoardId)}/posts`, {
+      // use central posts API: provide board_id in body
+      const fullPayload = { ...payload, board_id: Number(resolvedBoardId) }
+      const res = await fetch(`/api/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(fullPayload)
       })
 
       const text = await res.text()
