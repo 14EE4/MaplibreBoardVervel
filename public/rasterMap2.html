@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Raster Map (노트 기능)</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.11.0/dist/maplibre-gl.css" />
+    <script src="https://unpkg.com/maplibre-gl@5.11.0/dist/maplibre-gl.js"></script>
+    <style>
+        html, body, #map { height: 100%; margin: 0; padding: 0; }
+        .popup-input textarea { width: 220px; height: 80px; }
+        .popup-input button { margin-right: 6px; }
+        .popup-note p { margin: 6px 0 0 0; }
+        .popup-meta { font-size: 11px; color: #666; margin-top:6px; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+console.log('rasterMap2.html loaded');
+
+const map = new maplibregl.Map({
+    container: 'map',
+    style: {
+        version: 8,
+        sources: {
+            'raster-tiles': {
+                type: 'raster',
+                tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                tileSize: 256,
+                minzoom: 0,
+                maxzoom: 19
+            }
+        },
+        layers: [{ id: 'simple-tiles', type: 'raster', source: 'raster-tiles', attribution: '© OpenStreetMap contributors' }]
+    },
+    center: [0, 0],
+    zoom: 0
+});
+
+try { map.getCanvas().style.cursor = 'crosshair'; } catch (e) { console.warn('cursor set failed', e); }
+// Grid overlay controls and renderer
+// UI: toggle + grid size selector (degrees)
+// 격자 크기 고정: 5도
+// 기본: 격자 비활성화
+var gridState = {
+    enabled: false,
+    sizeDeg: 5
+};
+
+// create control container
+var gridControl = document.createElement('div');
+gridControl.style.position = 'absolute';
+gridControl.style.top = '10px';
+gridControl.style.right = '10px';
+gridControl.style.background = 'rgba(255,255,255,0.9)';
+gridControl.style.padding = '8px';
+gridControl.style.borderRadius = '4px';
+gridControl.style.boxShadow = '0 1px 4px rgba(0,0,0,0.2)';
+gridControl.style.fontFamily = 'sans-serif';
+gridControl.style.fontSize = '13px';
+gridControl.style.zIndex = 9999;
+
+var toggle = document.createElement('input');
+toggle.type = 'checkbox'; toggle.checked = gridState.enabled; toggle.id = 'gridToggle';
+var label = document.createElement('label'); label.htmlFor = 'gridToggle'; label.textContent = 'Grid';
+label.style.marginRight = '8px';
+
+var sizeSelect = document.createElement('select');
+var sizes = [0.25, 0.5, 1, 2, 5, 10, 20];
+sizes.forEach(function(s){ var opt = document.createElement('option'); opt.value = s; opt.text = s + '°'; if (s===gridState.sizeDeg) opt.selected = true; sizeSelect.appendChild(opt); });
+sizeSelect.style.marginLeft = '6px';
+
+var sizeLabel = document.createElement('span'); sizeLabel.textContent = 'Size (고정):'; sizeLabel.style.marginLeft = '8px';
+
+// 고정: 선택기 비활성화
+sizeSelect.value = gridState.sizeDeg;
+sizeSelect.disabled = true;
+
+gridControl.appendChild(toggle); gridControl.appendChild(label); gridControl.appendChild(sizeLabel); gridControl.appendChild(sizeSelect);
+document.body.appendChild(gridControl);
+
+// grid source/layer names
+var GRID_SOURCE = 'geo-grid-source';
+var GRID_LAYER = 'geo-grid-layer';
+// boards overlay (filled cells colored by posts_count)
+var BOARD_SOURCE = 'boards-grid-source';
+var BOARD_LAYER = 'boards-grid-layer';
+
+function buildGridGeoJSON(sizeDeg, bounds) {
+    var west = bounds.getWest();
+    var east = bounds.getEast();
+    var south = bounds.getSouth();
+    var north = bounds.getNorth();
+
+    function normalizeLng(l) { while (l < -180) l += 360; while (l > 180) l -= 360; return l; }
+    west = normalizeLng(west);
+    east = normalizeLng(east);
+
+    var lonStart = Math.floor(west / sizeDeg) * sizeDeg;
+    var lonEnd = Math.ceil((east + (east < west ? 360 : 0)) / sizeDeg) * sizeDeg;
+
+    var latStart = Math.floor(south / sizeDeg) * sizeDeg;
+    var latEnd = Math.ceil(north / sizeDeg) * sizeDeg;
+
+    var features = [];
+
+    for (var lon = lonStart; lon <= lonEnd; lon += sizeDeg) {
+        var lonNorm = normalizeLng(lon);
+        var line = {
+            type: 'Feature',
+            properties: { type: 'v', lon: lonNorm },
+            geometry: {
+                type: 'LineString',
+                coordinates: [[lonNorm, -90], [lonNorm, 90]]
+            }
+        };
+        features.push(line);
+    }
+
+    for (var lat = latStart; lat <= latEnd; lat += sizeDeg) {
+        var latClamped = Math.max(-90, Math.min(90, lat));
+        var line = {
+            type: 'Feature',
+            properties: { type: 'h', lat: latClamped },
+            geometry: {
+                type: 'LineString',
+                coordinates: [[-180, latClamped], [180, latClamped]]
+            }
+        };
+        features.push(line);
+    }
+
+    return { type: 'FeatureCollection', features: features };
+}
+
+function ensureGridLayer() {
+    if (!map.getSource(GRID_SOURCE)) {
+        map.addSource(GRID_SOURCE, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({ id: GRID_LAYER, type: 'line', source: GRID_SOURCE, layout: {}, paint: { 'line-color': '#ff0000', 'line-width': 1, 'line-opacity': 0.6 } });
+    }
+}
+
+function updateGrid() {
+    if (!gridState.enabled) {
+        if (map.getLayer(GRID_LAYER)) map.setLayoutProperty(GRID_LAYER, 'visibility', 'none');
+        return;
+    }
+    ensureGridLayer();
+    if (map.getLayer(GRID_LAYER)) map.setLayoutProperty(GRID_LAYER, 'visibility', 'visible');
+    var bounds = map.getBounds();
+    var data = buildGridGeoJSON(gridState.sizeDeg, bounds);
+    var src = map.getSource(GRID_SOURCE);
+    try { src.setData(data); } catch (e) { /* ignore if not ready */ }
+}
+
+function buildBoardsGeoJSON(boards, sizeDeg) {
+    var features = [];
+    boards.forEach(function(b){
+        var gx = b.grid_x, gy = b.grid_y;
+        if (gx == null || gy == null) return;
+        var west = gx * sizeDeg - 180;
+        var south = gy * sizeDeg - 90;
+        var east = west + sizeDeg;
+        var north = south + sizeDeg;
+        var coords = [
+            [west, south], [east, south], [east, north], [west, north], [west, south]
+        ];
+        features.push({ type: 'Feature', properties: { posts_count: b.posts_count || 0, grid_x: gx, grid_y: gy }, geometry: { type: 'Polygon', coordinates: [coords] } });
+    });
+    return { type: 'FeatureCollection', features: features };
+}
+
+function ensureBoardsLayer() {
+    if (!map.getSource(BOARD_SOURCE)) {
+        map.addSource(BOARD_SOURCE, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({
+            id: BOARD_LAYER,
+            type: 'fill',
+            source: BOARD_SOURCE,
+            layout: {},
+            paint: {
+                'fill-color': [
+                    'interpolate', ['linear'], ['get', 'posts_count'],
+                    0, '#2b83ba',
+                    5, '#66c2a5',
+                    20, '#fee08b',
+                    50, '#fdae61',
+                    100, '#d73027'
+                ],
+                'fill-opacity': 0.45
+            }
+        });
+        map.addLayer({ id: BOARD_LAYER + '-outline', type: 'line', source: BOARD_SOURCE, paint: { 'line-color': '#000000', 'line-width': 0.5, 'line-opacity': 0.2 } });
+    }
+}
+
+function updateBoardsOverlay() {
+    ensureBoardsLayer();
+    fetch('/api/boards').then(r => r.json()).then(function(boards) {
+        var data = buildBoardsGeoJSON(boards, gridState.sizeDeg);
+        var src = map.getSource(BOARD_SOURCE);
+        try { src.setData(data); } catch (e) { console.warn('set boards data failed', e); }
+    }).catch(function(err){ console.warn('load boards failed', err); });
+}
+
+// wire UI events
+toggle.addEventListener('change', function() { gridState.enabled = !!toggle.checked; updateGrid(); });
+sizeSelect.addEventListener('change', function() { gridState.sizeDeg = parseFloat(sizeSelect.value) || 5; updateGrid(); });
+
+map.on('load', function() { ensureGridLayer(); updateGrid(); });
+map.on('moveend', updateGrid);
+map.on('zoomend', updateGrid);
+
+map.on('load', function() { updateBoardsOverlay(); });
+map.on('moveend', function(){ updateBoardsOverlay(); });
+
+try { updateGrid(); } catch (e) { console.warn('grid init failed', e); }
+
+map.on('click', function(e) {
+    try {
+        var lng = e.lngLat.lng;
+        var lat = e.lngLat.lat;
+        var size = gridState.sizeDeg;
+        var gridX = Math.floor((lng + 180) / size);
+        var gridY = Math.floor((lat + 90) / size);
+
+        var centerLng = gridX * size - 180 + size/2;
+        var centerLat = gridY * size - 90 + size/2;
+
+        fetch('/api/boards/grid/' + encodeURIComponent(gridX) + '/' + encodeURIComponent(gridY) + '/ensure', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ center_lng: centerLng, center_lat: centerLat })
+        }).then(function(res) {
+            if (!res.ok) throw new Error('서버 에러');
+            return res.json();
+        }).then(function(data) {
+            var id = data && data.id ? data.id : null;
+            if (id) {
+                window.open('/board?id=' + encodeURIComponent(id), '_blank');
+            } else {
+                window.open('/boards?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY), '_blank');
+            }
+            try { updateBoardsOverlay(); } catch(e) {}
+        }).catch(function(err) { console.error('grid ensure error', err); alert('게시판 생성/열기에 실패했습니다. 콘솔 확인'); });
+    } catch (err) { console.error('grid click handler failed', err); }
+});
+
+</script>
+</body>
+</html>
