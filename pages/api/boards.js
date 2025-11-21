@@ -5,7 +5,8 @@ export default async function handler(req, res) {
 
   try {
     if (method === 'GET') {
-      const result = await query('SELECT id, name FROM boards ORDER BY id')
+      // return board fields needed by the map overlay (grid coords and posts_count)
+      const result = await query('SELECT id, name, grid_x, grid_y, posts_count, center_lng, center_lat, meta FROM boards ORDER BY id')
       return res.status(200).json(result.rows)
     }
 
