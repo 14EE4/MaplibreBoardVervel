@@ -124,7 +124,7 @@ export default function Board() {
     const pw = (document.getElementById(`pwd-${postId}`)?.value || '').trim()
     if (!pw) { alert('수정을 위해 비밀번호를 입력하세요.'); return }
     try {
-      const res = await fetch(`/api/boards/${encodeURIComponent(resolvedBoardId)}/posts/${encodeURIComponent(postId)}/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) })
+      const res = await fetch(`/api/posts/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: postId, password: pw }) })
       if (!res.ok) {
         const j = await res.json().catch(()=>({})); throw j
       }
@@ -140,7 +140,7 @@ export default function Board() {
     const newContent = (editing[postId] && editing[postId].value || '').trim()
     if (!newContent) { alert('내용을 입력하세요.'); return }
     try {
-      const res = await fetch(`/api/boards/${encodeURIComponent(resolvedBoardId)}/posts/${encodeURIComponent(postId)}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw, content: newContent, author: (author || null) }) })
+      const res = await fetch(`/api/posts`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: postId, password: pw, content: newContent, author: (author || null) }) })
       if (!res.ok) {
         const j = await res.json().catch(()=>({})); throw j
       }
@@ -154,7 +154,7 @@ export default function Board() {
     if (!pw) { alert('삭제를 위해 비밀번호를 입력하세요.'); return }
     if (!confirm('정말로 삭제하시겠습니까?')) return
     try {
-      const res = await fetch(`/api/boards/${encodeURIComponent(resolvedBoardId)}/posts/${encodeURIComponent(postId)}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) })
+      const res = await fetch(`/api/posts?id=${encodeURIComponent(postId)}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) })
       if (!res.ok) {
         const j = await res.json().catch(()=>({})); throw j
       }

@@ -56,8 +56,20 @@ export default async function handler(req, res) {
     }
 
     if (method === 'DELETE') {
-      const { id } = req.query
+      // accept id either in query or in JSON body; require password verification
+      const body = req.body || {}
+      const id = req.query.id || body.id
+      const password = body.password || null
       if (!id) return res.status(400).json({ error: 'id required' })
+
+      const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
+      // check stored password
+      const existing = await query('SELECT password FROM posts WHERE id = $1', [Number(id)])
+      if (!existing || existing.rowCount === 0) return res.status(404).json({ error: 'not found' })
+      const stored = existing.rows[0].password
+      if (!((stored == null && hashed == null) || (stored != null && stored === hashed))) {
+        return res.status(403).json({ error: '비밀번호가 일치하지 않습니다.' })
+      }
 
       // transaction: delete post and decrement boards.posts_count
       const client = await (await require('../../lib/db').pool).connect()
