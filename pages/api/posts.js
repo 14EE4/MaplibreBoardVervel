@@ -1,4 +1,5 @@
 const { query } = require('../../lib/db')
+const crypto = require('crypto')
 
 // Posts API
 // GET /api/posts?board_id=1  => list posts for board (if board_id provided) or all posts
@@ -23,13 +24,16 @@ export default async function handler(req, res) {
       const { board_id, author, content, password } = req.body
       if (!board_id || !content) return res.status(400).json({ error: 'board_id and content required' })
 
+      // hash password (SHA-256 hex) to be compatible with backend service
+      const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
+
       // transaction: insert post and increment boards.posts_count
       const client = await (await require('../../lib/db').pool).connect()
       try {
         await client.query('BEGIN')
         const insert = await client.query(
           'INSERT INTO posts(board_id, author, content, password) VALUES($1,$2,$3,$4) RETURNING *',
-          [board_id, author || null, content, password || null]
+          [board_id, author || null, content, hashed]
         )
         await client.query('UPDATE boards SET posts_count = posts_count + 1 WHERE id = $1', [board_id])
         await client.query('COMMIT')
@@ -45,7 +49,8 @@ export default async function handler(req, res) {
     if (method === 'PUT') {
       const { id, author, content, password } = req.body
       if (!id || !content) return res.status(400).json({ error: 'id and content required' })
-      const result = await query('UPDATE posts SET author=$1, content=$2, password=$3, updated_at=now() WHERE id=$4 RETURNING *', [author || null, content, password || null, id])
+      const hashed = password ? crypto.createHash('sha256').update(String(password), 'utf8').digest('hex') : null
+      const result = await query('UPDATE posts SET author=$1, content=$2, password=$3, updated_at=now() WHERE id=$4 RETURNING *', [author || null, content, hashed, id])
       if (result.rowCount === 0) return res.status(404).json({ error: 'not found' })
       return res.status(200).json(result.rows[0])
     }
