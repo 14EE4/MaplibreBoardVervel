@@ -196,7 +196,7 @@ export default function Board() {
             <div dangerouslySetInnerHTML={{ __html: (p.author ? `<strong>${escapeHtml(p.author)}</strong>` : '<strong>익명</strong>') + ' <span style="color:#888;font-size:12px">' + (p.createdAt ? formatTime(p.createdAt) : '') + '</span>' }} />
             <div style={{ marginTop: 6 }}>
               {editing[p.id] && editing[p.id].editing ? (
-                <textarea style={{ width: '100%', height: 120 }} value={editing[p.id].value} onChange={e=>setEditing(e=>({ ...e, [p.id]: { editing: true, value: e.target.value } }))} />
+                <textarea style={{ width: '100%', height: 120 }} value={editing[p.id].value} onChange={ev=>setEditing(prev=>({ ...prev, [p.id]: { editing: true, value: ev.target.value } }))} />
               ) : (
                 <div className="post-content" dangerouslySetInnerHTML={{ __html: escapeHtml(p.content || '').replace(/\n/g, '<br>') }} />
               )}
