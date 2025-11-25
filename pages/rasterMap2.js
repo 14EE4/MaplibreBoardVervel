@@ -21,6 +21,12 @@ export default function RasterMap2() {
     waitForMaplibre(8000).then((maplibregl) => {
       if (!mounted) return
       try {
+        // restore saved view state (center, zoom) from localStorage
+        let savedState = null
+        try { savedState = JSON.parse(localStorage.getItem('rasterMap2-state')) } catch (e) { savedState = null }
+        const initCenter = savedState && Array.isArray(savedState.center) ? savedState.center : [0, 0]
+        const initZoom = savedState && typeof savedState.zoom === 'number' ? savedState.zoom : 0
+
         map = new maplibregl.Map({
           container: 'map',
           style: {
@@ -36,8 +42,8 @@ export default function RasterMap2() {
             },
             layers: [{ id: 'simple-tiles', type: 'raster', source: 'raster-tiles', attribution: '© OpenStreetMap contributors' }]
           },
-          center: [0, 0],
-          zoom: 0
+          center: initCenter,
+          zoom: initZoom
         })
 
         try { map.getCanvas().style.cursor = 'crosshair' } catch (e) { console.warn('cursor set failed', e) }
@@ -161,8 +167,17 @@ export default function RasterMap2() {
         sizeSelect.addEventListener('change', function(){ gridState.sizeDeg = parseFloat(sizeSelect.value) || 5; updateGrid(); })
 
         map.on('load', function(){ ensureGridLayer(); updateGrid(); ensureBoardsLayer(); updateBoardsOverlay(); })
-        map.on('moveend', function(){ updateGrid(); updateBoardsOverlay(); })
-        map.on('zoomend', updateGrid)
+        map.on('moveend', function(){
+          try {
+            const c = map.getCenter(); const z = map.getZoom();
+            localStorage.setItem('rasterMap2-state', JSON.stringify({ center: [c.lng, c.lat], zoom: z }))
+          } catch (e) {}
+          updateGrid(); updateBoardsOverlay();
+        })
+        map.on('zoomend', function(){
+          try { const c = map.getCenter(); const z = map.getZoom(); localStorage.setItem('rasterMap2-state', JSON.stringify({ center: [c.lng, c.lat], zoom: z })) } catch(e){}
+          updateGrid()
+        })
 
         map.on('click', function(e){
           try {
