@@ -191,7 +191,19 @@ export default function RasterMap2() {
 
             fetch('/api/boards/grid/' + encodeURIComponent(gridX) + '/' + encodeURIComponent(gridY) + '/ensure', {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ center_lng: centerLng, center_lat: centerLat })
-            }).then(function(res){ if (!res.ok) throw new Error('서버 에러'); return res.json() }).then(function(data){ const id = data && data.id ? data.id : null; if (id) window.open('/board?id=' + encodeURIComponent(id), '_blank'); else window.open('/boards?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY), '_blank'); try { updateBoardsOverlay() } catch(e) {} }).catch(function(err){ console.error('grid ensure error', err); alert('게시판 생성/열기에 실패했습니다. 콘솔 확인') })
+            })
+            .then(function(res){ if (!res.ok) throw new Error('서버 에러'); return res.json() })
+            .then(function(data){
+              const id = data && data.id ? data.id : null
+              if (id) {
+                // navigate in the same tab instead of opening a new window
+                window.location.href = '/board?id=' + encodeURIComponent(id)
+              } else {
+                window.location.href = '/boards?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY)
+              }
+              try { updateBoardsOverlay() } catch(e) {}
+            })
+            .catch(function(err){ console.error('grid ensure error', err); alert('게시판 생성/열기에 실패했습니다. 콘솔 확인') })
           } catch (err) { console.error('grid click handler failed', err) }
         })
 
