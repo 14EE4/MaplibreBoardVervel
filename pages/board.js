@@ -75,7 +75,7 @@ export default function Board() {
         setMetaText(`grid: ${gx},${gy}`)
         loadPosts(found.id)
       } else {
-        setMetaText(`해당 격자의 게시판을 찾을 수 없습니다 (grid:${gx},${gy}).`)
+        setMetaText(`해당 격자의 게시판을 찾을 수 없습니다 (grid:${gx},${gy}).`)        
       }
     } catch (err) {
       console.error('boards fetch failed', err)
@@ -133,6 +133,37 @@ export default function Board() {
     }
   }
 
+  async function createBoardAndOpen(name) {
+    try {
+      setLoading(true)
+      const body = { name: name || `board-${Date.now()}` }
+      // include grid center if available in query
+      if (grid_x != null && grid_y != null) {
+        const size = 5 // default grid size used elsewhere (best-effort)
+        body.grid_x = Number(grid_x)
+        body.grid_y = Number(grid_y)
+        body.center_lng = Number(grid_x) * size - 180 + size/2
+        body.center_lat = Number(grid_y) * size - 90 + size/2
+      }
+      const res = await fetch('/api/boards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const j = await res.json()
+      if (!res.ok) throw j
+      // navigate to new board
+      const newId = j && j.id ? j.id : null
+      if (newId) {
+        router.replace(`/board?id=${encodeURIComponent(newId)}`)
+      } else {
+        // fallback: reload current
+        window.location.reload()
+      }
+    } catch (err) {
+      console.error('create board failed', err)
+      alert((err && err.error) ? err.error : '보드 생성 실패')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   async function verifyAndEdit(postId) {
     const pw = (document.getElementById(`pwd-${postId}`)?.value || '').trim()
     if (!pw) { alert('수정을 위해 비밀번호를 입력하세요.'); return }
@@ -182,6 +213,15 @@ export default function Board() {
       </Head>
       <h1 id="title">게시판</h1>
       <div id="boardMeta" style={{ color: '#666', fontSize: 13, marginBottom: 8 }}>{metaText}</div>
+      {!boardMeta && !loading && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 6, color: '#444' }}>보드가 존재하지 않거나 데이터베이스에 연결되어 있지 않습니다.</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={()=>createBoardAndOpen()}>새 보드 생성 및 이동</button>
+            <button onClick={()=>createBoardAndOpen(prompt('생성할 보드 이름을 입력하세요','새 보드'))}>이름 지정하여 생성</button>
+          </div>
+        </div>
+      )}
       {boardMeta && (
         <div style={{ marginBottom: 12, padding: 8, border: '1px solid #eee', borderRadius: 6 }}>
           <div><strong>이름:</strong> {boardMeta.name || '(이름 없음)'}</div>
