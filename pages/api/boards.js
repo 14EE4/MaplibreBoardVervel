@@ -11,8 +11,17 @@ export default async function handler(req, res) {
     }
 
     if (method === 'POST') {
-      const { name } = req.body
-      const result = await query('INSERT INTO boards(name) VALUES($1) RETURNING id, name', [name || `board-${Date.now()}`])
+      // accept optional grid and center fields so clients can create boards tied to a grid
+      const { name, grid_x, grid_y, center_lng, center_lat, meta } = req.body || {}
+      const insertSql = `INSERT INTO boards(name, grid_x, grid_y, center_lng, center_lat, meta)
+        VALUES($1,$2,$3,$4,$5) RETURNING id, name, grid_x, grid_y, center_lng, center_lat, meta`
+      const params = [name || `board-${Date.now()}`,
+        grid_x != null ? Number(grid_x) : null,
+        grid_y != null ? Number(grid_y) : null,
+        center_lng != null ? Number(center_lng) : null,
+        center_lat != null ? Number(center_lat) : null
+      ]
+      const result = await query(insertSql, params)
       return res.status(201).json(result.rows[0])
     }
 

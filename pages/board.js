@@ -171,16 +171,32 @@ export default function Board() {
       // navigate to new board
       const newId = j && j.id ? j.id : null
       if (newId) {
-        // prefer Next router navigation, but fallback to location if router.replace unavailable
-        try {
-          if (router && typeof router.replace === 'function') {
-            router.replace(`/board?id=${encodeURIComponent(newId)}`)
-          } else {
+        // if grid coordinates were provided in the query, prefer navigating to the grid form
+        if (grid_x != null && grid_y != null) {
+          const qgx = encodeURIComponent(grid_x)
+          const qgy = encodeURIComponent(grid_y)
+          try {
+            if (router && typeof router.replace === 'function') {
+              router.replace(`/board?grid_x=${qgx}&grid_y=${qgy}`)
+            } else {
+              window.location.href = `/board?grid_x=${qgx}&grid_y=${qgy}`
+            }
+          } catch (navErr) {
+            console.warn('router replace failed, falling back', navErr)
+            window.location.href = `/board?grid_x=${qgx}&grid_y=${qgy}`
+          }
+        } else {
+          // fallback to id-based navigation if no grid coords available
+          try {
+            if (router && typeof router.replace === 'function') {
+              router.replace(`/board?id=${encodeURIComponent(newId)}`)
+            } else {
+              window.location.href = `/board?id=${encodeURIComponent(newId)}`
+            }
+          } catch (navErr) {
+            console.warn('router replace failed, falling back', navErr)
             window.location.href = `/board?id=${encodeURIComponent(newId)}`
           }
-        } catch (navErr) {
-          console.warn('router replace failed, falling back', navErr)
-          window.location.href = `/board?id=${encodeURIComponent(newId)}`
         }
       } else {
         // fallback: reload current
