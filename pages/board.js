@@ -89,7 +89,11 @@ export default function Board() {
     try {
       const res = await fetch('/api/boards')
       const list = await res.json()
-      const found = Array.isArray(list) ? list.find(b => b.grid_x === Number(gx) && b.grid_y === Number(gy)) : null
+      const found = Array.isArray(list) ? list.find(b => {
+        const bx = (b.grid_x != null) ? b.grid_x : b.x
+        const by = (b.grid_y != null) ? b.grid_y : b.y
+        return bx === Number(gx) && by === Number(gy)
+      }) : null
       if (found) {
         setResolvedBoardId(found.id)
         setMetaText(`grid: ${gx},${gy}`)
@@ -274,9 +278,9 @@ export default function Board() {
       {boardMeta && (
         <div style={{ marginBottom: 12, padding: 8, border: '1px solid #eee', borderRadius: 6 }}>
           <div><strong>이름:</strong> {boardMeta.name || '(이름 없음)'}</div>
-          {'grid_x' in boardMeta && 'grid_y' in boardMeta && <div><strong>그리드:</strong> {boardMeta.grid_x}, {boardMeta.grid_y}</div>}
-          {'posts_count' in boardMeta && <div><strong>게시물 수:</strong> {boardMeta.posts_count}</div>}
-          {'center_lng' in boardMeta && 'center_lat' in boardMeta && <div><strong>중심 좌표:</strong> {boardMeta.center_lng}, {boardMeta.center_lat}</div>}
+          {((boardMeta.grid_x != null) || (boardMeta.x != null)) && ((boardMeta.grid_y != null) || (boardMeta.y != null)) && <div><strong>그리드:</strong> {(boardMeta.grid_x != null) ? boardMeta.grid_x : boardMeta.x}, {(boardMeta.grid_y != null) ? boardMeta.grid_y : boardMeta.y}</div>}
+          {((boardMeta.posts_count != null) || (boardMeta.count != null)) && <div><strong>게시물 수:</strong> {(boardMeta.posts_count != null) ? boardMeta.posts_count : boardMeta.count}</div>}
+          {((boardMeta.center_lng != null) || (boardMeta.lng != null)) && ((boardMeta.center_lat != null) || (boardMeta.lat != null)) && <div><strong>중심 좌표:</strong> {(boardMeta.center_lng != null) ? boardMeta.center_lng : boardMeta.lng}, {(boardMeta.center_lat != null) ? boardMeta.center_lat : boardMeta.lat}</div>}
         </div>
       )}
 

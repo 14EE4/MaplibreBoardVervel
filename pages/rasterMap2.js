@@ -105,15 +105,17 @@ export default function RasterMap2() {
         function buildBoardsGeoJSON(boards, sizeDeg) {
           const features = []
           boards.forEach(b => {
-            const gx = b.grid_x, gy = b.grid_y
-            if (gx == null || gy == null) return
-            const west = gx * sizeDeg - 180
-            const south = gy * sizeDeg - 90
-            const east = west + sizeDeg
-            const north = south + sizeDeg
-            const coords = [[west, south], [east, south], [east, north], [west, north], [west, south]]
-            features.push({ type: 'Feature', properties: { posts_count: b.posts_count || 0, grid_x: gx, grid_y: gy }, geometry: { type: 'Polygon', coordinates: [coords] } })
-          })
+              const gx = (b.grid_x != null) ? b.grid_x : b.x
+              const gy = (b.grid_y != null) ? b.grid_y : b.y
+              if (gx == null || gy == null) return
+              const west = gx * sizeDeg - 180
+              const south = gy * sizeDeg - 90
+              const east = west + sizeDeg
+              const north = south + sizeDeg
+              const coords = [[west, south], [east, south], [east, north], [west, north], [west, south]]
+              const posts = (b.posts_count != null) ? b.posts_count : (b.count != null ? b.count : 0)
+              features.push({ type: 'Feature', properties: { posts_count: posts, grid_x: gx, grid_y: gy }, geometry: { type: 'Polygon', coordinates: [coords] } })
+            })
           return { type: 'FeatureCollection', features }
         }
 

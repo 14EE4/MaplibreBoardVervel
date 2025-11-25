@@ -6,8 +6,18 @@ export default async function handler(req, res) {
   try {
     if (method === 'GET') {
       // return board fields needed by the map overlay (grid coords and posts_count)
-      const result = await query('SELECT id, name, grid_x, grid_y, posts_count, center_lng, center_lat, meta FROM boards ORDER BY id')
-      return res.status(200).json(result.rows)
+      const result = await query('SELECT id, name, grid_x, grid_y, posts_count, center_lng, center_lat FROM boards ORDER BY id')
+      // map to minimal public shape: id, name, x, y, lng, lat, count
+      const rows = (result.rows || []).map(r => ({
+        id: r.id,
+        name: r.name,
+        x: r.grid_x,
+        y: r.grid_y,
+        lng: r.center_lng,
+        lat: r.center_lat,
+        count: r.posts_count || 0
+      }))
+      return res.status(200).json(rows)
     }
 
     if (method === 'POST') {
