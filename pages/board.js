@@ -151,7 +151,17 @@ export default function Board() {
       // navigate to new board
       const newId = j && j.id ? j.id : null
       if (newId) {
-        router.replace(`/board?id=${encodeURIComponent(newId)}`)
+        // prefer Next router navigation, but fallback to location if router.replace unavailable
+        try {
+          if (router && typeof router.replace === 'function') {
+            router.replace(`/board?id=${encodeURIComponent(newId)}`)
+          } else {
+            window.location.href = `/board?id=${encodeURIComponent(newId)}`
+          }
+        } catch (navErr) {
+          console.warn('router replace failed, falling back', navErr)
+          window.location.href = `/board?id=${encodeURIComponent(newId)}`
+        }
       } else {
         // fallback: reload current
         window.location.reload()
@@ -218,7 +228,10 @@ export default function Board() {
           <div style={{ marginBottom: 6, color: '#444' }}>보드가 존재하지 않거나 데이터베이스에 연결되어 있지 않습니다.</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={()=>createBoardAndOpen()}>새 보드 생성 및 이동</button>
-            <button onClick={()=>createBoardAndOpen(prompt('생성할 보드 이름을 입력하세요','새 보드'))}>이름 지정하여 생성</button>
+            <button onClick={()=>{
+              const name = (typeof window !== 'undefined' && typeof window.prompt === 'function') ? window.prompt('생성할 보드 이름을 입력하세요','새 보드') : null
+              createBoardAndOpen(name)
+            }}>이름 지정하여 생성</button>
           </div>
         </div>
       )}
