@@ -194,13 +194,8 @@ export default function RasterMap2() {
             })
             .then(function(res){ if (!res.ok) throw new Error('서버 에러'); return res.json() })
             .then(function(data){
-              const id = data && data.id ? data.id : null
-              if (id) {
-                // navigate in the same tab instead of opening a new window
-                window.location.href = '/board?id=' + encodeURIComponent(id)
-              } else {
-                window.location.href = '/board?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY)
-              }
+              // Regardless of whether the server returned an id, navigate using grid query format
+              window.location.href = '/board?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY)
               try { updateBoardsOverlay() } catch(e) {}
             })
             .catch(function(err){ console.error('grid ensure error', err); alert('게시판 생성/열기에 실패했습니다. 콘솔 확인') })
