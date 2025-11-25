@@ -229,3 +229,6 @@ COMMIT;
 - 사이트 아이콘은 `public/icon.png`로 추가되어 있으며, 정적 랜딩 페이지(`public/index.html`)와 Next.js 헤드(`pages/_app.js`)에 파비콘 링크가 설정되어 있습니다.
 - 일부 브라우저에서 파비콘이 나타나지 않으면 캐시 문제일 수 있으니 강력 새로고침(Ctrl+F5) 또는 시크릿 창에서 확인해 보세요.
 - `favicon.ico`를 추가로 생성하려면 `public/icon.png`에서 변환하여 `public/favicon.ico`로 두면 대부분의 브라우저에서 자동으로 사용됩니다. 원하시면 제가 `favicon.ico`를 생성해 추가해 드립니다.
+
+**확인된 문제**
+0,0클릭시 72,0으로 이동되는 문제
