@@ -7,6 +7,7 @@ export default function Board() {
   const { id, grid_x, grid_y } = router.query
 
   const [resolvedBoardId, setResolvedBoardId] = useState(null)
+  const [boardMeta, setBoardMeta] = useState(null)
   const [metaText, setMetaText] = useState('로드 중...')
   const [posts, setPosts] = useState([])
   const [author, setAuthor] = useState('')
@@ -48,6 +49,18 @@ export default function Board() {
   const loadBoardById = useCallback((boardId) => {
     setResolvedBoardId(boardId)
     setMetaText('')
+    // load board metadata from /api/boards list
+    (async function(){
+      try {
+        const res = await fetch('/api/boards')
+        const list = await res.json()
+        const found = Array.isArray(list) ? list.find(b => String(b.id) === String(boardId)) : null
+        setBoardMeta(found)
+      } catch (err) {
+        console.warn('board meta load failed', err)
+        setBoardMeta(null)
+      }
+    })()
     loadPosts(boardId)
   }, [loadPosts])
 
@@ -169,6 +182,14 @@ export default function Board() {
       </Head>
       <h1 id="title">게시판</h1>
       <div id="boardMeta" style={{ color: '#666', fontSize: 13, marginBottom: 8 }}>{metaText}</div>
+      {boardMeta && (
+        <div style={{ marginBottom: 12, padding: 8, border: '1px solid #eee', borderRadius: 6 }}>
+          <div><strong>이름:</strong> {boardMeta.name || '(이름 없음)'}</div>
+          {'grid_x' in boardMeta && 'grid_y' in boardMeta && <div><strong>그리드:</strong> {boardMeta.grid_x}, {boardMeta.grid_y}</div>}
+          {'posts_count' in boardMeta && <div><strong>게시물 수:</strong> {boardMeta.posts_count}</div>}
+          {'center_lng' in boardMeta && 'center_lat' in boardMeta && <div><strong>중심 좌표:</strong> {boardMeta.center_lng}, {boardMeta.center_lat}</div>}
+        </div>
+      )}
 
       <div style={{ background: '#fffbdd', border: '1px solid #ffe58f', padding: 8, borderRadius: 4, marginBottom: 12 }}>
         이 페이지는 클라이언트에서 보드 ID 또는 격자 좌표로 게시글을 불러옵니다.
