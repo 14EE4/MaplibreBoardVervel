@@ -199,7 +199,7 @@ export default function RasterMap2() {
                 // navigate in the same tab instead of opening a new window
                 window.location.href = '/board?id=' + encodeURIComponent(id)
               } else {
-                window.location.href = '/boards?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY)
+                window.location.href = '/board?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY)
               }
               try { updateBoardsOverlay() } catch(e) {}
             })

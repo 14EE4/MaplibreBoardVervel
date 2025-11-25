@@ -193,7 +193,7 @@ export default function Board() {
 
       <div style={{ background: '#fffbdd', border: '1px solid #ffe58f', padding: 8, borderRadius: 4, marginBottom: 12 }}>
         이 페이지는 클라이언트에서 보드 ID 또는 격자 좌표로 게시글을 불러옵니다.
-        URL 예시: <code>/boards?id=123</code> 또는 <code>/boards?grid_x=0&grid_y=0</code>
+        URL 예시: <code>/board?id=123</code> 또는 <code>/board?grid_x=0&grid_y=0</code>
       </div>
 
       <section id="newPost">
