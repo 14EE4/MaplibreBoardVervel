@@ -42,6 +42,50 @@ npm.cmd install
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
 """ > .env.local
 ```
+# MaplibreBoardVervel
+
+현재 상태
+-
+- 프레임워크: Next.js (페이지 + API Routes)
+- 배포 대상: Vercel (서버리스)
+- DB: PostgreSQL (외부 Neon 권장)
+- 포팅된 기능: `board` 페이지, `rasterMap2` 페이지(맵 관련 기능)
+- 제거/비활성: 기존 Spring Boot(자바/Gradle) 관련 파일은 레포에서 제거됨
+
+주요 파일/위치
+-
+- `pages/board.js` — 게시판(보드) UI 및 클라이언트 로직 포팅
+- `pages/rasterMap2.js` — MapLibre 기반 레스터맵 클라이언트 포팅
+- `pages/api/...` — 서버리스 API 엔드포인트(boards/posts 등)
+- `lib/db.js` — Postgres 연결(Pool) 헬퍼(서버리스 환경 재사용 패턴)
+- `migrations/postgres_create_tables.sql` — Postgres DDL
+- `scripts/migrate.js` — 간단한 마이그레이션 실행기
+
+사전 준비
+-
+1. Node.js (권장 최신 LTS)
+2. Powershell 환경(Windows): `npm.cmd` 사용 권장
+3. 외부 PostgreSQL 인스턴스 (예: Neon)
+
+환경 변수
+-
+- `DATABASE_URL` — PostgreSQL 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname`)
+
+로컬 개발 (PowerShell 예시)
+-
+1. 저장소 루트에서 의존성 설치
+
+```powershell
+npm.cmd install
+```
+
+2. 로컬 환경 파일 생성 (예제)
+
+```powershell
+"""
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+""" > .env.local
+```
 
 3. 마이그레이션 실행(데이터베이스가 준비되어 있어야 함)
 
@@ -78,6 +122,7 @@ Vercel 배포
 - 테스트: 마이그레이션 적용 후 엔드투엔드 테스트(게시글 생성/수정/삭제, 맵 연동)를 권장합니다.
 
 주요 변경 사항
+-
 - `rasterMap.html`에 `map.html`과 동일한 노트(메모) 기능 추가
   - 지도 클릭으로 입력 팝업(경도/위도 표시, 텍스트 입력, 저장/취소)
   - 저장 시 `/api/notes`로 POST하여 DB에 저장, 팝업이 읽기 전용으로 전환
@@ -88,14 +133,13 @@ Vercel 배포
 
 **프로젝트: MaplibreBoardVercel**
 
-**한줄 요약:** Next.js 기반 프론트엔드(페이지 + API Routes)와 PostgreSQL(Neon) 연동으로 지도 기반 게시판을 제공하는 프로젝트입니다. 기존 Spring Boot 소스는 보존되어 있으나, 주요 UI/API는 Next.js로 포팅되어 Vercel에 배포하기 쉽도록 구성되어 있습니다.
+**한줄 요약:** Next.js 기반 프론트엔드(페이지 + API Routes)와 PostgreSQL(Neon) 연동으로 지도 기반 게시판을 제공하는 프로젝트입니다. 주요 UI/API는 Next.js로 포팅되어 Vercel에 배포하기 쉽도록 구성되어 있습니다.
 
 **현재 상태(요약)**
 - `pages/board.js` : `board.html`을 React로 포팅 — 게시글 조회/작성/수정/삭제(비밀번호 검증) 클라이언트 로직 포함.
 - `pages/rasterMap2.js` : `rasterMap2.html`을 React로 포팅 — MapLibre(래스터 타일) 기반 그리드 및 보드 오버레이, 그리드 클릭 시 보드 생성/열기 기능 포함.
 - DB: PostgreSQL(Neon) 사용 권장. 마이그레이션 파일은 `migrations/postgres_create_tables.sql`에 있음 (단일 `posts` 테이블 방식).
 - DB 유틸: `lib/db.js` (pg Pool 전역 캐시) — Vercel 같은 서버리스 환경에서 연결 관리용.
-- 스프링부트 소스는 `src/main/java/...`에 그대로 존재(보관/참고용).
 
 **프로젝트 구조(핵심)**
 - `package.json` — Next.js, 스크립트, 의존성
@@ -105,7 +149,6 @@ Vercel 배포
 - `lib/db.js` — PostgreSQL 연결 풀
 - `migrations/postgres_create_tables.sql` — Postgres용 DDL
 - `scripts/migrate.js` — 마이그레이션 실행 스크립트 (NODE 환경에서 `DATABASE_URL` 사용)
-- `src/main/...` — 기존 Spring Boot Java 코드(컨트롤러/서비스/템플릿)
 
 **필수 환경 변수**
 - `DATABASE_URL` — Neon/Postgres 연결 문자열 (예: `postgresql://user:pass@host:port/dbname?sslmode=require`)
@@ -160,3 +203,29 @@ COMMIT;
 다음 작업(권장)
 - API: `BoardService` 수준의 비즈니스 로직(특히 비밀번호 해시/검증, 트랜잭션으로 posts_count 유지)을 Next.js API에 완전히 이식 및 테스트.
 - UI: 추가적인 반응형 스타일과 로딩 UX 개선.
+
+관리자 페이지 접근(현재 구현)
+-
+- 현재 `pages/admin.js`에는 간단한 클라이언트 사이드 비밀번호 게이트가 구현되어 있습니다. 하드코딩된 비밀번호는 다음과 같습니다:
+
+```
+1q2w3e4r!
+```
+
+- 동작: 올바른 비밀번호 입력 시 `sessionStorage`에 `admin-authed=1`을 저장하여 같은 브라우저 세션에서는 재입력 없이 접근할 수 있습니다.
+- 주의: 이 방법은 클라이언트에 비밀번호가 노출되므로 보안에 취약합니다. 프로덕션 환경에서는 아래의 서버사이드 인증 방식을 권장합니다.
+
+서버사이드 인증(권장) — 간단한 구현 가이드
+-
+1. `ADMIN_PASSWORD`를 Vercel 환경변수 또는 로컬 `.env.local`에 설정합니다.
+2. `pages/api/login.js` 엔드포인트를 만들어 POST로 전달된 비밀번호를 서버에서 검증합니다.
+3. 검증이 성공하면 HttpOnly 세션 쿠키(또는 JWT)를 발급합니다.
+4. `pages/admin.js`는 서버에 인증 상태를 확인하거나, API 호출마다 쿠키로 인증을 확인하도록 합니다.
+
+제가 원하시면 이 레포에서 서버사이드 로그인 엔드포인트와 쿠키 기반 보호로 `pages/admin.js`를 업그레이드해 드리겠습니다.
+
+파비콘(favicon)
+-
+- 사이트 아이콘은 `public/icon.png`로 추가되어 있으며, 정적 랜딩 페이지(`public/index.html`)와 Next.js 헤드(`pages/_app.js`)에 파비콘 링크가 설정되어 있습니다.
+- 일부 브라우저에서 파비콘이 나타나지 않으면 캐시 문제일 수 있으니 강력 새로고침(Ctrl+F5) 또는 시크릿 창에서 확인해 보세요.
+- `favicon.ico`를 추가로 생성하려면 `public/icon.png`에서 변환하여 `public/favicon.ico`로 두면 대부분의 브라우저에서 자동으로 사용됩니다. 원하시면 제가 `favicon.ico`를 생성해 추가해 드립니다.
