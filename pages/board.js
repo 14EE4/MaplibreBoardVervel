@@ -6,6 +6,26 @@ export default function Board() {
   const router = useRouter()
   const { id, grid_x, grid_y } = router.query
 
+  useEffect(()=>{
+    // quick debug logs to help track down `p(...) is not a function` errors
+    try {
+      console.log('Board component init', { id, grid_x, grid_y, routerType: typeof router, routerReplace: router && typeof router.replace === 'function' })
+    } catch(e) { console.warn('Board init log failed', e) }
+
+    function onError(e) {
+      console.error('Global error captured in board page:', e)
+    }
+    function onUnhandledRejection(e) {
+      console.error('Unhandled promise rejection on board page:', e)
+    }
+    window.addEventListener && window.addEventListener('error', onError)
+    window.addEventListener && window.addEventListener('unhandledrejection', onUnhandledRejection)
+    return ()=>{
+      window.removeEventListener && window.removeEventListener('error', onError)
+      window.removeEventListener && window.removeEventListener('unhandledrejection', onUnhandledRejection)
+    }
+  }, [id, grid_x, grid_y, router])
+
   const [resolvedBoardId, setResolvedBoardId] = useState(null)
   const [boardMeta, setBoardMeta] = useState(null)
   const [metaText, setMetaText] = useState('로드 중...')
