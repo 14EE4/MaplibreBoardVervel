@@ -1,6 +1,81 @@
-MaplibreTest - README
+# MaplibreBoardVervel
 
-이 프로젝트는 Spring Boot + MyBatis + Lombok + Thymeleaf 기반의 웹 애플리케이션으로, 여러 MapLibre 지도를 제공하고 지도에서 위치 기반 메모(노트)를 추가/수정/삭제하여 MySQL에 저장할 수 있습니다.
+현재 상태
+-
+- 프레임워크: Next.js (페이지 + API Routes)
+- 배포 대상: Vercel (서버리스)
+- DB: PostgreSQL (외부 Neon 권장)
+- 포팅된 기능: `board` 페이지, `rasterMap2` 페이지(맵 관련 기능)
+- 제거/비활성: 기존 Spring Boot(자바/Gradle) 관련 파일은 레포에서 제거됨
+
+주요 파일/위치
+-
+- `pages/board.js` — 게시판(보드) UI 및 클라이언트 로직 포팅
+- `pages/rasterMap2.js` — MapLibre 기반 레스터맵 클라이언트 포팅
+- `pages/api/...` — 서버리스 API 엔드포인트(boards/posts 등)
+- `lib/db.js` — Postgres 연결(Pool) 헬퍼(서버리스 환경 재사용 패턴)
+- `migrations/postgres_create_tables.sql` — Postgres DDL
+- `scripts/migrate.js` — 간단한 마이그레이션 실행기
+
+사전 준비
+-
+1. Node.js (권장 최신 LTS)
+2. Powershell 환경(Windows): `npm.cmd` 사용 권장
+3. 외부 PostgreSQL 인스턴스 (예: Neon)
+
+환경 변수
+-
+- `DATABASE_URL` — PostgreSQL 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname`)
+
+로컬 개발 (PowerShell 예시)
+-
+1. 저장소 루트에서 의존성 설치
+
+```powershell
+npm.cmd install
+```
+
+2. 로컬 환경 파일 생성 (예제)
+
+```powershell
+"""
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+""" > .env.local
+```
+
+3. 마이그레이션 실행(데이터베이스가 준비되어 있어야 함)
+
+```powershell
+node scripts/migrate.js
+```
+
+4. 개발 서버 시작
+
+```powershell
+npm.cmd run dev
+```
+
+프로덕션 빌드
+-
+```powershell
+npm.cmd run build
+```
+
+Vercel 배포
+-
+1. Vercel 프로젝트를 생성합니다.
+2. Vercel 환경 변수에 `DATABASE_URL` 값을 추가합니다.
+3. 레포를 연결하면 Vercel이 자동으로 빌드/배포합니다.
+
+데이터베이스 관련 메모
+-
+- `migrations/postgres_create_tables.sql` 파일에 스키마 정의가 있습니다. Neon 같은 외부 Postgres 인스턴스에 먼저 적용해야 합니다.
+- 마이그레이션/샘플 데이터 삽입 시 중복 인덱스나 FK 제약으로 실패하는 경우가 있으니, 오류 메시지를 확인하고 중복 레코드 정리 후 재시도하세요.
+
+제한사항 & TODO
+-
+- 일부 서버측 비즈니스 로직(예: 패스워드 해싱/검증)이 아직 Node API로 완전히 포팅되지 않았을 수 있습니다. 그 부분은 `pages/api` 내부에서 추가 구현이 필요합니다.
+- 테스트: 마이그레이션 적용 후 엔드투엔드 테스트(게시글 생성/수정/삭제, 맵 연동)를 권장합니다.
 
 주요 변경 사항
 - `rasterMap.html`에 `map.html`과 동일한 노트(메모) 기능 추가
@@ -11,224 +86,77 @@ MaplibreTest - README
   - 노트 삭제 지원: 읽기 팝업의 "삭제" 버튼으로 DELETE /api/notes/{id} 호출하여 삭제
   - 10초 주기 폴링(poll)으로 새 노트가 있으면 자동으로 표시
 
-사전 준비
-- Java 17 JDK
-- Gradle wrapper (`gradlew.bat`) — 프로젝트에 포함됨
-- MySQL 서버 (로컬 또는 접근 가능한 DB 서버)
-- (선택) curl 등 HTTP 테스트 도구
+**프로젝트: MaplibreBoardVercel**
 
-데이터베이스 설정 예시
-- DB 이름: `maplibretest`
-- DB 사용자: `maptest`
-- DB 비밀번호: `maptest`
+**한줄 요약:** Next.js 기반 프론트엔드(페이지 + API Routes)와 PostgreSQL(Neon) 연동으로 지도 기반 게시판을 제공하는 프로젝트입니다. 기존 Spring Boot 소스는 보존되어 있으나, 주요 UI/API는 Next.js로 포팅되어 Vercel에 배포하기 쉽도록 구성되어 있습니다.
 
-`src/main/resources/application.yml` 예시:
-```yaml
-spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/maplibretest?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: maptest
-    password: maptest
+**현재 상태(요약)**
+- `pages/board.js` : `board.html`을 React로 포팅 — 게시글 조회/작성/수정/삭제(비밀번호 검증) 클라이언트 로직 포함.
+- `pages/rasterMap2.js` : `rasterMap2.html`을 React로 포팅 — MapLibre(래스터 타일) 기반 그리드 및 보드 오버레이, 그리드 클릭 시 보드 생성/열기 기능 포함.
+- DB: PostgreSQL(Neon) 사용 권장. 마이그레이션 파일은 `migrations/postgres_create_tables.sql`에 있음 (단일 `posts` 테이블 방식).
+- DB 유틸: `lib/db.js` (pg Pool 전역 캐시) — Vercel 같은 서버리스 환경에서 연결 관리용.
+- 스프링부트 소스는 `src/main/java/...`에 그대로 존재(보관/참고용).
+
+**프로젝트 구조(핵심)**
+- `package.json` — Next.js, 스크립트, 의존성
+- `pages/` — Next.js 페이지 및 API 라우트
+  - `pages/board.js`, `pages/rasterMap2.js`
+  - `pages/api/boards.js`, `pages/api/posts.js` 등
+- `lib/db.js` — PostgreSQL 연결 풀
+- `migrations/postgres_create_tables.sql` — Postgres용 DDL
+- `scripts/migrate.js` — 마이그레이션 실행 스크립트 (NODE 환경에서 `DATABASE_URL` 사용)
+- `src/main/...` — 기존 Spring Boot Java 코드(컨트롤러/서비스/템플릿)
+
+**필수 환경 변수**
+- `DATABASE_URL` — Neon/Postgres 연결 문자열 (예: `postgresql://user:pass@host:port/dbname?sslmode=require`)
+
+로컬 개발 (PowerShell 예)
+1) 세션에 `DATABASE_URL` 설정
+```powershell
+$env:DATABASE_URL="postgresql://<user>:<pass>@<host>:<port>/<db>?sslmode=require"
 ```
+2) 의존성 설치 및 마이그레이션 실행
+```powershell
+npm.cmd install
+npm.cmd run migrate
+```
+3) 개발 서버 시작
+```powershell
+npm.cmd run dev
+```
+4) 확인 URL
+- 보드 페이지: `http://localhost:3000/board?id=<BOARD_ID>`
+- 레스터 맵: `http://localhost:3000/rasterMap2`
 
-MySQL에서 DB/계정 생성(예):
+DB 마이그레이션/구현 노트
+- 현재 `migrations/postgres_create_tables.sql`은 단일 `posts` 테이블과 `boards` 테이블을 생성합니다. `updated_at` 자동 갱신을 위한 트리거 함수도 포함되어 있습니다.
+- 기존 MySQL 스타일(격자별 `posts_grid_x_y` 테이블)은 운영·관리 부담이 커서 기본적으로 단일 테이블(또는 파티셔닝) 접근을 권장합니다.
+- 테이블 및 인덱스 생성 중 중복(예: `idx_boards_grid`) 오류가 발생하면 중복 `boards` 행을 제거/병합해야 합니다. (중복 탐지 및 병합 스크립트가 필요하면 도와드립니다.)
+
+API/기능 현황
+- `/api/boards` : 보드 조회/생성, 그리드 보드 보장(`grid/{x}/{y}/ensure`) 등 (Next API로 이식됨)
+- `/api/boards/:id/posts` : 게시글 CRUD (생성/수정/삭제/비밀번호 검증) — 클라이언트는 비밀번호(4자리 PIN)를 전송하고, 서버가 해시/검증해야 합니다. 현재 API가 DB 연동을 사용하지만, 비밀번호 해시 로직(예: bcrypt 또는 `pgcrypto`)이 완전히 포팅되었는지 확인하세요.
+
+운영/배포 (Vercel)
+- Vercel은 Next.js를 자동 인식합니다. 레포를 연결한 후 `Settings > Environment Variables`에 `DATABASE_URL`을 추가하세요.
+- `lib/db.js`의 전역 Pool 캐시를 사용해 Vercel의 커넥션 제한을 완화하십시오.
+- 마이그레이션은 배포 전에 실행하세요(Neon SQL Editor 권장). 프로덕션에서 DDL을 애플리케이션이 직접 실행하는 것은 권장하지 않습니다.
+
+테스트 데이터(예제)
+- 보드 생성 및 게시글 삽입(트랜잭션 예):
 ```sql
-CREATE DATABASE IF NOT EXISTS maplibretest CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS 'maptest'@'localhost' IDENTIFIED BY 'maptest';
-GRANT ALL PRIVILEGES ON maplibretest.* TO 'maptest'@'localhost';
-FLUSH PRIVILEGES;
-```
-테이블 스키마는 `create_table_notes.sql`을 참고하세요.
-
-서버 실행 방법
-- 프로젝트 루트에서 (Windows cmd):
-```cmd
-cd /d "C:\Users\user\Documents\workspace\MaplibreTest"
-gradlew.bat bootRun
-```
-- 기본 포트는 8080입니다. 포트 충돌이 있을 경우 `--args="--server.port=8081"` 같은 방식으로 다른 포트로 실행할 수 있습니다.
-
-주요 엔드포인트
-- GET `/api/notes` : 모든 노트 조회 (클라이언트에서 로드/폴링에 사용)
-- POST `/api/notes` : 새로운 노트 저장 (payload: { lng, lat, content })
-- PUT `/api/notes` : 기존 노트 수정 (payload: { id, lng, lat, content })
-- DELETE `/api/notes/{id}` : 기존 노트 삭제 (경로 변수로 id 전달)
-
-rasterMap/map 동작(사용자 관점)
-1. 브라우저에서 `/rasterMap` 또는 `/map` 접속
-2. 지도 클릭 → 입력 팝업이 열림 → 메모 입력 → 저장(서버에 POST) → 읽기 팝업으로 전환
-3. 저장된 노트는 다른 클라이언트가 페이지를 새로 고치거나 폴링에 의해 10초 이내로 표시
-4. 읽기 팝업의 "수정" 버튼을 누르면 편집 팝업이 열리고 저장하면 PUT으로 업데이트
-5. 읽기 팝업의 "삭제" 버튼을 누르면 확인창 이후 DELETE 요청이 호출되어 노트가 삭제되고 팝업이 제거됨
-
-간단한 API 테스트 예시 (cmd)
-- GET:
-```cmd
-curl http://localhost:8080/api/notes
-```
-- POST 예시:
-```cmd
-curl -H "Content-Type: application/json" -d "{\"lng\":127.0246,\"lat\":37.5326,\"content\":\"테스트 노트\"}" http://localhost:8080/api/notes
-```
-- PUT 예시 (id가 4인 노트 수정):
-```cmd
-curl -H "Content-Type: application/json" -X PUT -d "{\"id\":4,\"lng\":127.0246,\"lat\":37.5326,\"content\":\"수정된 내용\"}" http://localhost:8080/api/notes
-```
-- DELETE 예시 (id가 4인 노트 삭제):
-```cmd
-curl -X DELETE http://localhost:8080/api/notes/4
-```
-(포트가 8081로 실행한 경우 위에서 8080을 8081로 변경)
-
-문제 해결(자주 발생하는 이슈)
-- 지도가 보이지 않을 때
-  - 브라우저 콘솔(F12) 확인: `maplibregl is not defined`, CSS/JS 404, 또는 자바스크립트 파싱 오류 등이 있는지 확인
-  - CDN 차단(회사 네트워크 등)일 경우 MapLibre JS/CSS를 로컬로 내려받아 프로젝트의 정적 리소스로 서빙하도록 변경
-- 서버가 포트 8080/8081에 실패할 경우: 포트가 이미 사용 중인지 확인하고 해당 프로세스를 중지하거나 다른 포트로 실행
-
-추가로 할 수 있는 개선
-- 실시간 동기화: 폴링 대신 WebSocket 또는 Server-Sent Events(SSE)로 노트 동기화
-- 인증/권한: 사용자 계정과 노트 소유권 연동
-- UI 개선: 삭제 시 로딩 표시, 삭제 취소(undo) 기능, 최대 문자열 길이 등
-
-TODO
-- rastermap2에 지역별 게시판 
-- 게시판 활동량만큼 지도에 표시(글/시간)
-- 시간당 게시판의 글의 최대->빨강
-- 나머지는 적을수록 파란색으로
-- 0이면 검정
-- 지도를 격자로 나눈 후 클릭시 해당 격자 타일의 게시판을 새 탭으로 열기
-
-
-게시판 db구조(maplibretest db 사용)
-- ~~지역별 게시판을 미리 생성~~
-- 게시판 목록 테이블
-- ~~게시판 테이블 형식 생성 sql문으로 게시판 진입시 테이블 생성 후 게시판 목록 테이블에 추가~~
-- ~~게시판 테이블 이름은 지역 이름으로 동적 생성~~
-- 격자 형식으로 쪼갠 후 게시판 테이블을 미리 생성
-- 활동량을 격자 사각형 위에 색(활동량(TODO))을 반투명으로 입힘
-
-
-변경 완료: README를 갱신하여 삭제 API 및 UI 사용법을 추가했습니다. (git 관련 명령은 요청에 따라 수행하지 않았습니다.)
-
-## 프로젝트 업데이트(요약)
-
-아래는 이 저장소에 적용한 주요 변경 사항의 한국어 요약입니다.
-
-- 지도에서 5도 격자를 표시하고, 사용자가 격자를 클릭하면 해당 격자용 게시판을 생성하거나(없을 경우) 기존 게시판을 반환하도록 구현했습니다.
-- 각 격자에 대해 필요 시 `posts_grid_{x}_{y}` 형식의 테이블을 동적으로 생성합니다.
-- 게시글은 해당 격자의 테이블로 저장/조회되도록 저장 로직을 라우팅했습니다.
-- `boards` 테이블에 `posts_count`를 유지하여 지도 위에서 게시글 수에 따라 색으로 시각화할 수 있게 했습니다.
-- 게시판 UI 개선: 작성 폼을 목록 위로 이동시키고, Ctrl+Enter 단축키로 빠르게 작성할 수 있도록 했습니다.
-- 게시글 비밀번호 보호: 작성 시 4자리 PIN(선택)을 입력하면 서버에서 SHA-256 해시로 저장하고, 수정/삭제는 해당 PIN으로만 가능하도록 구현했습니다.
-- 수정(편집) UI는 클라이언트에서 비밀번호를 입력한 뒤 서버 검증이 통과해야 편집 폼을 보여주도록 변경했습니다(편집/삭제 시 서버에서 다시 비밀번호 검증을 수행함).
-- 템플릿의 Thymeleaf 인라인 파싱 문제와 Gradle toolchain 관련 빌드 문제를 완화하여 로컬 환경에서 빌드가 가능하도록 수정했습니다.
-
-### 향후 권장 작업
-
-- 서버측 PIN 형식 검증(숫자 4자리 강제) 추가
-- 기존에 생성된 `posts_grid_*` 테이블에 `password` 컬럼이 누락된 경우를 위한 ALTER TABLE 마이그레이션 스크립트 추가
-- 비밀번호 저장 방식 개선(단순 SHA-256 대신 salt+bcrypt/argon2 권장)
-- 장기 운영 환경에서는 다수의 동적 테이블 대신 단일 `posts` 테이블에 `grid_x/grid_y` 컬럼을 두는 설계가 더 관리하기 쉽습니다.
-
-필요하시면 위 권장 작업들 중 우선순위에 따라 바로 적용해 드리겠습니다.
-
----
-
-## Next.js 마이그레이션 안내 (간단한 시작 가이드)
-
-이 저장소를 Vercel에 올리기 위해 Spring Boot를 Next.js로 단계적으로 마이그레이션하는 최소 스캐폴드를 함께 추가했습니다 (프론트엔드와 API 라우트 포함).
-
-빠른 시작:
-
-1. Node(또는 npm)가 설치되어 있는지 확인하세요.
-
-2. 의존성 설치 및 개발 서버 실행:
-
-```powershell
-npm install
-npm run dev
+BEGIN;
+WITH b AS (
+  INSERT INTO boards (name, grid_x, grid_y, center_lng, center_lat, meta)
+  VALUES ('트랜잭션 보드', 1, 2, 128.1, 36.9, '{}'::jsonb)
+  RETURNING id
+)
+INSERT INTO posts (board_id, author, content, password)
+SELECT id, '테스트', '트랜잭션 글', 'pw123' FROM b;
+UPDATE boards SET posts_count = posts_count + 1 WHERE id = (SELECT id FROM b);
+COMMIT;
 ```
 
-3. 브라우저에서 http://localhost:3000 에 접속하면 간단한 보드 리스트와 API 연동 예시를 확인할 수 있습니다.
-
-API 설명(임시, 인메모리 저장소):
-- `GET /api/boards` : 게시판 목록 조회
-- `POST /api/boards` : 게시판 생성 (body: { name })
-- `GET /api/notes` : 노트 목록 조회
-- `POST /api/notes` : 노트 생성 (body: { lng, lat, content })
-- `PUT /api/notes` : 노트 수정 (body: { id, lng, lat, content })
-- `DELETE /api/notes?id=ID` : 노트 삭제
-
-주의: 현재 API는 데모용으로 서버 메모리에 저장하는 방식입니다. 실제 DB 연동(예: Supabase, PlanetScale, Cloud SQL)을 원하시면 DB 모듈과 환경변수를 추가해 드리겠습니다.
-
-Vercel 배포:
-- 이 프로젝트는 Next.js 표준 프로젝트 구조를 따르고 있어 Vercel에 연결하면 자동으로 빌드/배포됩니다.
-- Vercel에서 환경변수(예: DB 연결 문자열)를 설정하려면 프로젝트 설정 > Environment Variables에서 추가하세요.
-
-추가 지원이 필요하면 어떤 범위로(프론트만 정적화 / 전체 API + DB 연동 / 외부 DB 연동) 진행할지 알려주세요. 바로 이어서 필요한 파일을 완성하고 로컬 검증을 도와드리겠습니다.
-
----
-
-## PostgreSQL 연동 및 Vercel 배포 가이드 (Supabase 권장)
-
-1) 빠른 개요
-- 이 리포지토리는 Next.js + API Routes로 구성되어 있으며, API는 기본적으로 `DATABASE_URL` 환경변수로 전달되는 PostgreSQL에 연결하도록 구현되어 있습니다.
-- 로컬에서 개발할 때는 `DATABASE_URL`을 설정하거나, Supabase(또는 다른 Postgres) 인스턴스를 만들어 연결하세요.
-
-2) Supabase(추천)로 빠르게 시작하기
-- https://supabase.com 에서 계정 생성 → 프로젝트 생성(무료 플랜 있음)
-- Database 탭에서 connection string을 복사하세요 (예: postgres://user:pass@db.host:5432/dbname)
-- Vercel에서 환경변수 `DATABASE_URL`에 이 값을 설정합니다.
-
-3) 마이그레이션(테이블 생성)
-- 저장소에 `migrations/postgres_create_tables.sql` 파일을 추가했습니다. Supabase SQL editor 또는 psql을 통해 실행하세요.
-
-예: psql 사용 시 로컬에서
-```powershell
-# Windows PowerShell 예 (psql이 설치되어 있어야 함)
-psql "<DATABASE_URL>" -f migrations/postgres_create_tables.sql
-```
-
-4) Vercel 설정
-- GitHub에 커밋/푸시한 뒤 Vercel에서 repo를 연결하면 자동 빌드됩니다.
-- Vercel 프로젝트 설정 > Environment Variables에 `DATABASE_URL`을 추가하세요 (Production/Preview/Development 적절히 설정).
-
-### Neon 사용 (간단 가이드)
-
-Neon을 사용하려면 아래 절차를 따르세요. Neon은 서버리스용 Postgres를 제공하므로 Vercel + Next.js와 잘 어울립니다.
-
-1. Neon 계정 생성 및 프로젝트 생성
-  - https://neon.tech 에서 계정 생성 후 새 프로젝트(데이터베이스) 생성
-  - 프로젝트 생성 후 Dashboard → Credentials 에서 connection string(URI)을 복사합니다. (형식: `postgresql://user:pass@host:port/dbname?sslmode=require`)
-
-2. 로컬에서 마이그레이션 실행
-  - PowerShell에서:
-    ```powershell
-    $env:DATABASE_URL='postgresql://user:pass@host:port/dbname?sslmode=require'; npm.cmd run migrate
-    ```
-  - 또는 Neon의 SQL editor에 `migrations/postgres_create_tables.sql` 내용을 붙여 실행해도 됩니다.
-
-3. Vercel에 연결
-  - Vercel 대시보드 → 프로젝트 → Settings → Environment Variables 에 접속
-  - Key: `DATABASE_URL`, Value: (Neon에서 복사한 connection string), Environment: Production/Preview/Development 필요에 따라 추가
-
-4. 배포 후 확인
-  - GitHub에 커밋/푸시하면 Vercel이 자동 빌드합니다. 배포가 완료되면 `/api/boards` 및 `/api/notes` 엔드포인트를 호출해 데이터베이스 연동을 확인하세요.
-
-주의 및 권장사항:
-- Neon은 서버리스 환경에 적합한 연결 옵션을 제공합니다. Neon이 권장하는 connection string(보통 `sslmode=require` 포함)을 사용하세요.
-- Vercel 같은 서버리스 플랫폼에서 DB 연결을 효율적으로 사용하려면 커넥션 풀링/재사용이 중요합니다. 이 리포지토리의 `lib/db.js`는 전역 캐시된 `pg.Pool`을 사용해 재사용하도록 구현되어 있습니다.
-- 배포 후 연결 오류가 발생하면 `sslmode` 파라미터나 Vercel에서 제공되는 환경변수 값이 정확한지(공백/특수문자) 확인하세요.
-
-
-5) 테스트
-- 로컬: `npm install` 후 `DATABASE_URL=<your_url> npm run dev` 로 실행하세요.
-- Vercel: 배포 후 `/api/boards` 및 `/api/notes`를 호출하여 동작 확인.
-
-6) 보안 및 권장사항
-- DB 연결 문자열은 절대 공개 저장소에 커밋하지 마세요(.env 파일도 마찬가지).
-- 프로덕션에서는 DB 사용자에 최소 권한을 부여하고 비밀번호 관리를 권장합니다.
-
-원하시면 제가 Supabase 프로젝트 생성부터 마이그레이션 실행, Vercel 환경변수 설정 가이드까지 단계별로 도와드리겠습니다. 어느 부분을 도와드릴까요? (예: Supabase 프로젝트 생성 / 로컬 마이그레이션 / Vercel에 Env 추가)
+다음 작업(권장)
+- API: `BoardService` 수준의 비즈니스 로직(특히 비밀번호 해시/검증, 트랜잭션으로 posts_count 유지)을 Next.js API에 완전히 이식 및 테스트.
+- UI: 추가적인 반응형 스타일과 로딩 UX 개선.

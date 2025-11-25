@@ -1,0 +1,121 @@
+"id","board_id","author","content","password","created_at","updated_at"
+"1","1","홍길동","테스트 글입니다","1234","2025-11-20 07:55:25.221513+00","2025-11-20 07:55:25.221513+00"
+"2","1",,"test",,"2025-11-21 06:38:58.603679+00","2025-11-21 06:38:58.603679+00"
+"3","1",,"test 1234","1234","2025-11-21 06:39:07.423435+00","2025-11-21 06:39:07.423435+00"
+"4","1",,"1234","1234","2025-11-21 06:39:22.597601+00","2025-11-21 06:39:22.597601+00"
+"5","1",,"1234 1","03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4","2025-11-21 06:43:12.733881+00","2025-11-21 06:43:12.733881+00"
+"6","1",,"1234 test","03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4","2025-11-21 06:43:49.088002+00","2025-11-21 06:43:49.088002+00"
+"9","1",,"수정용 글1","03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4","2025-11-21 06:51:22.090635+00","2025-11-21 06:54:40.830828+00"
+"10","1",,"test",,"2025-11-21 07:23:36.727101+00","2025-11-21 07:23:36.727101+00"
+"11","2",,"korea",,"2025-11-21 08:31:48.949539+00","2025-11-21 08:31:48.949539+00"
+"12","3",,"china",,"2025-11-21 08:40:32.39419+00","2025-11-21 08:40:32.39419+00"
+"13","3",,"hello world hello world hello world hello world hello world",,"2025-11-21 08:45:30.151545+00","2025-11-21 08:45:30.151545+00"
+"14","3",,"hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world",,"2025-11-21 08:45:33.915977+00","2025-11-21 08:45:33.915977+00"
+"15","3",,"hello world hello world hello world hello world hello world",,"2025-11-21 08:45:35.626534+00","2025-11-21 08:45:35.626534+00"
+"16","3",,"hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world",,"2025-11-21 08:45:36.471905+00","2025-11-21 08:45:36.471905+00"
+"17","3",,"hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world",,"2025-11-21 08:45:37.463984+00","2025-11-21 08:45:37.463984+00"
+"18","3",,"hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world",,"2025-11-21 08:45:38.402505+00","2025-11-21 08:45:38.402505+00"
+"19","3",,"hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world",,"2025-11-21 08:45:39.352798+00","2025-11-21 08:45:39.352798+00"
+"20","3",,"hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world",,"2025-11-21 08:45:40.314289+00","2025-11-21 08:45:40.314289+00"
+"21","4",,"JAPAN",,"2025-11-21 09:02:43.846487+00","2025-11-21 09:02:43.846487+00"
+"22","2",,"korea test","03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4","2025-11-21 09:03:04.126515+00","2025-11-21 09:03:04.126515+00"
+"23","2",,"test korea modified","03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4","2025-11-21 09:06:06.507765+00","2025-11-21 09:06:25.267678+00"
+"24","2",,"test haha","03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4","2025-11-21 09:06:54.950198+00","2025-11-21 09:07:06.160423+00"
+"25","3",,"게시판
+이 페이지는 클라이언트에서 보드 ID 또는 격자 좌표로 게시글을 불러옵니다. URL 예시: /boards?id=123 또는 /boards?grid_x=0&grid_y=0
+새 글 작성
+작성자 (선택)
+내용을 입력하세요...
+4자리 비밀번호 (선택)
+* 비밀번호를 설정하면 해당 비밀번호로 수정/삭제 가능
+전송Ctrl+Enter로 전송
+익명
+hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world
+비밀번호
+수정삭제
+익명
+hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world
+비밀번호
+수정삭제
+익명
+hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world
+비밀번호
+수정삭제
+익명
+hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world
+비밀번호
+수정삭제
+익명
+hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world
+비밀번호
+수정삭제
+익명
+hello world hello world hello world hello world hello world
+비밀번호
+수정삭제
+익명
+hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world
+비밀번호
+수정삭제
+익명
+hello world hello world hello world hello world hello world
+비밀번호
+수정삭제
+익명
+china
+비밀번호
+수정삭제
+← Back",,"2025-11-21 09:07:40.147748+00","2025-11-21 09:07:40.147748+00"
+"26","3",,"hello",,"2025-11-21 09:07:53.663595+00","2025-11-21 09:07:53.663595+00"
+"27","3",,"hello",,"2025-11-21 09:07:55.885503+00","2025-11-21 09:07:55.885503+00"
+"28","3",,"hellohello",,"2025-11-21 09:07:57.368843+00","2025-11-21 09:07:57.368843+00"
+"29","3",,"hellohello",,"2025-11-21 09:07:57.843614+00","2025-11-21 09:07:57.843614+00"
+"30","3",,"hellohellohellohellohellohello",,"2025-11-21 09:07:58.005514+00","2025-11-21 09:07:58.005514+00"
+"31","3",,"hellohello
+hellohellohello",,"2025-11-21 09:07:58.428331+00","2025-11-21 09:07:58.428331+00"
+"32","3",,"hellohello",,"2025-11-21 09:07:58.81238+00","2025-11-21 09:07:58.81238+00"
+"33","3",,"hello",,"2025-11-21 09:07:59.053665+00","2025-11-21 09:07:59.053665+00"
+"34","3",,"hellohello
+hello",,"2025-11-21 09:07:59.350126+00","2025-11-21 09:07:59.350126+00"
+"35","3",,"hellohello
+hellohello",,"2025-11-21 09:07:59.510194+00","2025-11-21 09:07:59.510194+00"
+"36","3",,"hello",,"2025-11-21 09:07:59.897658+00","2025-11-21 09:07:59.897658+00"
+"37","3",,"hello",,"2025-11-21 09:08:00.395994+00","2025-11-21 09:08:00.395994+00"
+"38","3",,"hello",,"2025-11-21 09:08:00.674007+00","2025-11-21 09:08:00.674007+00"
+"39","3",,"hellohello",,"2025-11-21 09:08:00.853218+00","2025-11-21 09:08:00.853218+00"
+"40","3",,"hello",,"2025-11-21 09:08:01.117169+00","2025-11-21 09:08:01.117169+00"
+"41","3",,"hellohello",,"2025-11-21 09:08:01.262534+00","2025-11-21 09:08:01.262534+00"
+"42","3",,"hellohellohello",,"2025-11-21 09:08:01.466319+00","2025-11-21 09:08:01.466319+00"
+"43","3",,"hello",,"2025-11-21 09:08:01.673756+00","2025-11-21 09:08:01.673756+00"
+"44","3",,"hello",,"2025-11-21 09:08:02.744006+00","2025-11-21 09:08:02.744006+00"
+"45","3",,"hellohello",,"2025-11-21 09:08:03.109256+00","2025-11-21 09:08:03.109256+00"
+"46","3",,"hellohellohellohello",,"2025-11-21 09:08:03.523457+00","2025-11-21 09:08:03.523457+00"
+"47","3",,"hello",,"2025-11-21 09:08:03.912923+00","2025-11-21 09:08:03.912923+00"
+"48","3",,"hello",,"2025-11-21 09:08:04.325391+00","2025-11-21 09:08:04.325391+00"
+"49","3",,"hellohello",,"2025-11-21 09:08:06.229798+00","2025-11-21 09:08:06.229798+00"
+"50","3",,"hellohellohellohellohello",,"2025-11-21 09:08:06.759585+00","2025-11-21 09:08:06.759585+00"
+"51","3",,"hellohellohellohellohellohellohellohello",,"2025-11-21 09:08:07.322648+00","2025-11-21 09:08:07.322648+00"
+"52","3",,"hellohello",,"2025-11-21 09:08:08.729763+00","2025-11-21 09:08:08.729763+00"
+"53","3",,"hellohellohellohellohello",,"2025-11-21 09:08:09.323374+00","2025-11-21 09:08:09.323374+00"
+"54","3",,"hello",,"2025-11-21 09:08:09.939406+00","2025-11-21 09:08:09.939406+00"
+"55","3",,"hello",,"2025-11-21 09:08:11.814477+00","2025-11-21 09:08:11.814477+00"
+"56","3",,"hellohellohellohellohellohellohello",,"2025-11-21 09:08:12.395341+00","2025-11-21 09:08:12.395341+00"
+"57","3",,"hello",,"2025-11-21 09:08:12.442429+00","2025-11-21 09:08:12.442429+00"
+"58","3",,"hellohellohellohello",,"2025-11-21 09:08:13.040697+00","2025-11-21 09:08:13.040697+00"
+"59","3",,"hello",,"2025-11-21 09:08:14.238981+00","2025-11-21 09:08:14.238981+00"
+"60","3",,"hellohello",,"2025-11-21 09:08:14.504892+00","2025-11-21 09:08:14.504892+00"
+"61","3",,"hellohellohellohellohello",,"2025-11-21 09:08:14.991912+00","2025-11-21 09:08:14.991912+00"
+"62","3",,"hello",,"2025-11-21 09:08:15.971105+00","2025-11-21 09:08:15.971105+00"
+"63","3",,"hello",,"2025-11-21 09:08:17.247799+00","2025-11-21 09:08:17.247799+00"
+"64","3",,"hellohello",,"2025-11-21 09:08:17.423429+00","2025-11-21 09:08:17.423429+00"
+"65","3",,"hellohellohellohellohello",,"2025-11-21 09:08:17.9005+00","2025-11-21 09:08:17.9005+00"
+"66","3",,"hellohellohellohellohellohello",,"2025-11-21 09:08:18.176221+00","2025-11-21 09:08:18.176221+00"
+"67","3",,"hello",,"2025-11-21 09:08:19.340575+00","2025-11-21 09:08:19.340575+00"
+"68","3",,"hellohello",,"2025-11-21 09:08:19.5477+00","2025-11-21 09:08:19.5477+00"
+"69","3",,"hellohellohello",,"2025-11-21 09:08:19.723461+00","2025-11-21 09:08:19.723461+00"
+"70","3",,"hellohellohellohello",,"2025-11-21 09:08:19.929271+00","2025-11-21 09:08:19.929271+00"
+"71","3",,"hellohellohellohellohellohello",,"2025-11-21 09:08:20.298456+00","2025-11-21 09:08:20.298456+00"
+"72","3",,"hello",,"2025-11-21 09:08:20.514861+00","2025-11-21 09:08:20.514861+00"
+"73","3",,"hellohellohellohellohello",,"2025-11-21 09:08:21.431895+00","2025-11-21 09:08:21.431895+00"
+"74","2",,"모바일에서 입력함
+수정함","03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4","2025-11-21 10:38:02.344733+00","2025-11-21 10:40:57.389271+00"
