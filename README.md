@@ -1,5 +1,6 @@
 # MaplibreBoardVervel
 
+
 현재 상태
 -
 - 프레임워크: Next.js (페이지 + API Routes)
