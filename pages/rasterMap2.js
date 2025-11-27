@@ -27,24 +27,70 @@ export default function RasterMap2() {
         const initCenter = savedState && Array.isArray(savedState.center) ? savedState.center : [0, 0]
         const initZoom = savedState && typeof savedState.zoom === 'number' ? savedState.zoom : 0
 
-        map = new maplibregl.Map({
-          container: 'map',
-          style: {
-            version: 8,
-            sources: {
-              'raster-tiles': {
-                type: 'raster',
-                tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-                tileSize: 256,
-                minzoom: 0,
-                maxzoom: 19
+        // createMap supports modes: 'osm' (OpenStreetMap raster), 'sat' (satellite raster), 'globe' (globe projection)
+        function createMap(mode) {
+          if (map) try { map.remove() } catch (e) {}
+          const baseOpts = {
+            container: 'map',
+            center: initCenter,
+            zoom: initZoom
+          }
+          if (mode === 'sat') {
+            // Esri World Imagery (satellite) tiles
+            map = new maplibregl.Map(Object.assign({}, baseOpts, {
+              style: {
+                version: 8,
+                sources: {
+                  'raster-tiles-sat': {
+                    type: 'raster',
+                    tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+                    tileSize: 256
+                  }
+                },
+                layers: [{ id: 'sat-tiles', type: 'raster', source: 'raster-tiles-sat', attribution: 'Tiles © Esri' }]
               }
-            },
-            layers: [{ id: 'simple-tiles', type: 'raster', source: 'raster-tiles', attribution: '© OpenStreetMap contributors' }]
-          },
-          center: initCenter,
-          zoom: initZoom
-        })
+            }))
+          } else if (mode === 'globe') {
+            // Globe projection — attempt to use raster OSM with globe projection; visual quality may vary.
+            map = new maplibregl.Map(Object.assign({}, baseOpts, {
+              projection: 'globe',
+              style: {
+                version: 8,
+                sources: {
+                  'raster-tiles': {
+                    type: 'raster',
+                    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                    tileSize: 256
+                  }
+                },
+                layers: [{ id: 'simple-tiles', type: 'raster', source: 'raster-tiles', attribution: '© OpenStreetMap contributors' }]
+              }
+            }))
+          } else {
+            // default: OpenStreetMap raster
+            map = new maplibregl.Map(Object.assign({}, baseOpts, {
+              style: {
+                version: 8,
+                sources: {
+                  'raster-tiles': {
+                    type: 'raster',
+                    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                    tileSize: 256,
+                    minzoom: 0,
+                    maxzoom: 19
+                  }
+                },
+                layers: [{ id: 'simple-tiles', type: 'raster', source: 'raster-tiles', attribution: '© OpenStreetMap contributors' }]
+              }
+            }))
+          }
+        }
+
+        // read saved mode or default to osm
+        let savedMode = null
+        try { const s = JSON.parse(localStorage.getItem('rasterMap2-state')); if (s && s.mode) savedMode = s.mode } catch (e) { savedMode = null }
+        const currentMode = savedMode || 'osm'
+        createMap(currentMode)
 
         try { map.getCanvas().style.cursor = 'crosshair' } catch (e) { console.warn('cursor set failed', e) }
 
@@ -152,6 +198,13 @@ export default function RasterMap2() {
         const toggle = document.createElement('input'); toggle.type = 'checkbox'; toggle.checked = gridState.enabled; toggle.id = 'gridToggle'
         const label = document.createElement('label'); label.htmlFor = 'gridToggle'; label.textContent = 'Grid'; label.style.marginRight = '8px'
 
+        // map mode selector
+        const modeSelect = document.createElement('select')
+        ;['osm','sat','globe'].forEach(function(m){ const o = document.createElement('option'); o.value = m; o.text = (m==='osm'?'OpenStreetMap':m==='sat'?'Satellite':'Globe (vector)'); modeSelect.appendChild(o) })
+        modeSelect.style.marginLeft = '8px'
+        try { if (currentMode) modeSelect.value = currentMode } catch(e){}
+        const modeLabel = document.createElement('span'); modeLabel.textContent = 'Map:'; modeLabel.style.marginLeft = '8px'
+
         const sizeSelect = document.createElement('select')
         const sizes = [0.25, 0.5, 1, 2, 5, 10, 20]
         sizes.forEach(function(s){ const opt = document.createElement('option'); opt.value = s; opt.text = s + '°'; if (s===gridState.sizeDeg) opt.selected = true; sizeSelect.appendChild(opt); })
@@ -160,13 +213,15 @@ export default function RasterMap2() {
         sizeSelect.value = gridState.sizeDeg
         sizeSelect.disabled = true
 
-        gridControl.appendChild(toggle); gridControl.appendChild(label); gridControl.appendChild(sizeLabel); gridControl.appendChild(sizeSelect)
+        gridControl.appendChild(toggle); gridControl.appendChild(label); gridControl.appendChild(sizeLabel); gridControl.appendChild(sizeSelect); gridControl.appendChild(modeLabel); gridControl.appendChild(modeSelect)
         // append to map container
         const mapContainer = document.getElementById('map-container') || document.body
         mapContainer.appendChild(gridControl)
 
         toggle.addEventListener('change', function(){ gridState.enabled = !!toggle.checked; updateGrid(); })
         sizeSelect.addEventListener('change', function(){ gridState.sizeDeg = parseFloat(sizeSelect.value) || 5; updateGrid(); })
+        modeSelect.addEventListener('change', function(){ try { const m = modeSelect.value; // persist
+          const st = JSON.parse(localStorage.getItem('rasterMap2-state')||'{}'); st.mode = m; localStorage.setItem('rasterMap2-state', JSON.stringify(st)); createMap(m); map.once('load', function(){ ensureGridLayer(); updateGrid(); ensureBoardsLayer(); updateBoardsOverlay(); }) } catch(e){ console.warn('mode change failed', e) } })
 
         map.on('load', function(){ ensureGridLayer(); updateGrid(); ensureBoardsLayer(); updateBoardsOverlay(); })
         map.on('moveend', function(){
