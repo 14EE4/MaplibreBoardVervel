@@ -1,3 +1,110 @@
+**MaplibreBoardVercel — 안내서 (한글)**
+
+**한줄 요약:** Next.js (페이지 + API Routes) 기반의 지도형 게시판 프로젝트. 서버리스(Vercel) 배포를 목표로 하며 데이터는 PostgreSQL(Neon 권장)을 사용합니다.
+
+라이브 데모: https://maplibreboard.vercel.app
+
+운영 DB: Neon PostgreSQL (Neon)을 사용하고 있습니다.
+
+**현재 상태**
+- 포팅된 기능: `board` 페이지, `rasterMap2` 페이지(맵 + 그리드), 게시글 CRUD API
+- 제거/비활성: 기존 Spring Boot 서버는 더 이상 앱 실행에 사용하지 않음(레포에 일부 남아있을 수 있음)
+
+**핵심 파일/위치**
+- `pages/board.js` — 보드(게시판) 클라이언트
+- `pages/rasterMap2.js` — MapLibre 기반 맵 + 그리드 뷰
+- `pages/api/boards.js`, `pages/api/posts.js` — 보드·게시글 서버리스 API
+- `lib/db.js` — PostgreSQL 연결(전역 Pool 재사용 패턴)
+- `migrations/postgres_create_tables.sql` — DB 스키마
+- `scripts/migrate.js` — 마이그레이션 실행 스크립트
+
+**필수 환경변수**
+- `DATABASE_URL` — PostgreSQL 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname?sslmode=require`)
+
+**로컬 개발 (PowerShell 예시)**
+
+1) 의존성 설치
+
+```powershell
+npm.cmd install
+```
+
+2) 환경변수 설정(임시 세션)
+
+```powershell
+$env:DATABASE_URL = "postgresql://<user>:<pass>@<host>:<port>/<db>?sslmode=require"
+```
+
+3) 마이그레이션 실행 (데이터베이스가 준비되어 있어야 함)
+
+```powershell
+node scripts/migrate.js
+```
+
+4) 개발 서버 시작
+
+```powershell
+npm.cmd run dev
+```
+
+5) 확인 URL
+- 보드: `http://localhost:3000/board?id=<BOARD_ID>` 또는 `http://localhost:3000/board?grid_x=<X>&grid_y=<Y>`
+- 레스터맵: `http://localhost:3000/rasterMap2`
+
+**프로덕션 빌드 / Vercel 배포**
+
+1. Vercel 프로젝트 생성 후 레포 연결
+2. `Settings > Environment Variables`에 `DATABASE_URL` 추가
+3. (권장) 마이그레이션을 Vercel 배포 전에 수동으로 실행
+4. Vercel이 자동 빌드/배포 수행 — 빌드 커맨드: `npm run build`
+
+라이브 사이트: https://maplibreboard.vercel.app
+
+**마이그레이션 및 DB 참고**
+- DDL 파일: `migrations/postgres_create_tables.sql` — 보드와 게시글(또는 posts) 테이블을 생성합니다.
+- 마이그레이션 스크립트는 단순히 SQL을 실행하므로, 운영 DB에는 사전 검토 후 적용하세요.
+
+**관리자 페이지(현재 구현 상태)**
+- `pages/admin.js`에는 클라이언트 사이드 비밀번호 게이트가 있습니다. 현재 동작은 브라우저 세션 기반이며, 보안상 취약합니다.
+- 권장: `ADMIN_PASSWORD`를 서버 환경변수로 두고, 서버사이드 로그인(토큰/쿠키)을 구현하세요. 필요하면 제가 구현해 드립니다.
+
+**API 요약(중요 엔드포인트)**
+- `GET /api/boards?id=<id>` — 단일 보드 조회
+- `GET /api/boards?grid_x=<x>&grid_y=<y>` — 그리드 기준 단일 보드 조회
+- `POST /api/boards` — 보드 생성 (필요시 `grid_x`,`grid_y`,`center_lng`,`center_lat` 포함)
+- `GET /api/posts?board_id=<id>` — 보드의 게시글 조회
+- `POST /api/posts` — 게시글 생성(비밀번호는 서버에서 해시)
+- `PUT /api/posts/:id` 및 `DELETE /api/posts/:id` — 수정/삭제 (비밀번호 검증 필요)
+
+**자주 발생하는 문제와 점검항목**
+- DB 연결 오류: `DATABASE_URL` 값이 올바른지, 외부 접속(방화벽/sslmode) 허용 여부를 확인하세요.
+- 마이그레이션 실패: SQL 에러 메시지에 따라 기존 인덱스/테이블 충돌을 해결해야 합니다.
+- 게시판 메타(이름/좌표)가 안보이는 문제: `/api/boards?grid_x=...&grid_y=...` 호출이 200이 나오는지 확인하세요. 404이면 보드가 DB에 없습니다.
+
+**샘플 명령(테스트 데이터 삽입)**
+
+```sql
+-- 예시: 보드와 게시글을 트랜잭션으로 추가
+BEGIN;
+WITH b AS (
+  INSERT INTO boards (name, grid_x, grid_y, center_lng, center_lat, meta)
+  VALUES ('예시 보드', 61, 25, 128.5, 36.2, '{}'::jsonb)
+  RETURNING id
+)
+INSERT INTO posts (board_id, author, content, password)
+SELECT id, '테스트', '안녕하세요', 'pw' FROM b;
+UPDATE boards SET posts_count = posts_count + 1 WHERE id = (SELECT id FROM b);
+COMMIT;
+```
+
+**다음 권장 작업(옵션)**
+- 서버사이드 관리자 인증(토큰/HttpOnly cookie) 구현
+- API 입력 검증 강화 (Joi 등)
+- E2E 테스트 및 샘플 데이터 시드 추가
+
+---
+필요하시면 제가 `README`에 추가로 포함할 내용을 반영하거나, Vercel 배포 설정(`vercel.json`) 생성, 또는 서버사이드 관리자 인증을 구현해 드리겠습니다.
+
 # MaplibreBoardVervel
 
 현재 상태
@@ -229,6 +336,24 @@ COMMIT;
 - 사이트 아이콘은 `public/icon.png`로 추가되어 있으며, 정적 랜딩 페이지(`public/index.html`)와 Next.js 헤드(`pages/_app.js`)에 파비콘 링크가 설정되어 있습니다.
 - 일부 브라우저에서 파비콘이 나타나지 않으면 캐시 문제일 수 있으니 강력 새로고침(Ctrl+F5) 또는 시크릿 창에서 확인해 보세요.
 - `favicon.ico`를 추가로 생성하려면 `public/icon.png`에서 변환하여 `public/favicon.ico`로 두면 대부분의 브라우저에서 자동으로 사용됩니다. 원하시면 제가 `favicon.ico`를 생성해 추가해 드립니다.
+
+**지도 상태 유지 및 보드 가시화(Heatmap Overlay)**
+
+- **지도 뷰 상태 유지:** `pages/rasterMap2.js`는 사용자가 보고 있던 지도 상태(중심 좌표, 줌 레벨, 베어링 등)를 `localStorage`에 저장합니다. 기본 동작은 다음과 같습니다:
+  - 저장 키: `rasterMap2-state`
+  - 저장 시점: 지도 이동/줌/회전 이벤트 발생 시 업데이트
+  - 로드 시점: 페이지 마운트 시 `localStorage`에 저장된 값이 있으면 해당 상태로 초기화합니다.
+  - 재현성: 브라우저 새로고침 또는 탭 재오픈 시 이전 위치와 줌 상태가 그대로 복원됩니다.
+  - 초기화 방법: 개발자 도구에서 `localStorage.removeItem('rasterMap2-state')` 또는 응용 프로그램 코드에서 초기화 로직을 추가하세요.
+
+- **보드 기반 색상 오버레이(Heatmap-like):** 맵 위에 그려지는 각 그리드(보드)는 DB의 `posts_count`(또는 API가 반환하는 `count`) 값에 따라 반투명 색상으로 표시됩니다. 동작 방식 요약:
+  - 데이터 소스: `pages/rasterMap2.js`가 호출하는 `GET /api/boards` 또는 보드 리스트 API에서 각 보드의 `count`(또는 `posts_count`) 값을 사용합니다.
+  - 색상 매핑: 게시글 수를 최소값(min)과 최대값(max) 사이에서 정규화한 값 `v`(0..1)를 만든 후, `v=0`일 때 파란색(예: `#3B82F6`), `v=1`일 때 빨간색(예: `#EF4444`)을 선형 보간(interpolate)합니다.
+  - 불투명도(알파): 기본적으로 0.25~0.4 사이의 반투명으로 설정하여 지도 타일을 가리지 않게 합니다(코드에서 `opacity` 상수로 조정 가능).
+  - 시각적 효과: 게시글 수가 적으면 파란색(차가움), 많을수록 빨간색(뜨거움)으로 바뀌며, 색상은 그리드 단위로 채워집니다.
+  - 조정 포인트: `pages/rasterMap2.js`의 상수 또는 컬러/스케일 함수를 변경하여 최소/최대 컷오프, 컬러 스케일(hsl/rgb), 불투명도 등을 조절할 수 있습니다.
+
+참고: 색상 오버레이가 보이려면 보드 테이블의 `posts_count`가 최신 상태여야 합니다. `POST /api/posts`나 게시물 삭제/수정 시 서버가 `boards.posts_count`를 갱신하도록 구현되어 있는지 확인하세요. 샘플 데이터로 테스트하려면 README의 샘플 SQL로 몇 개 보드를 삽입한 뒤 `posts_count` 값을 변경해 보세요.
 
 **확인된 문제**
 0,0클릭시 72,0으로 이동되는 문제
