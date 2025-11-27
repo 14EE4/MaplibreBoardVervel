@@ -68,38 +68,50 @@ export default function Board() {
 
   const loadBoardById = useCallback((boardId) => {
     setResolvedBoardId(boardId)
-    setMetaText('')
-    // load board metadata from /api/boards list
-    (async function(){
+    setMetaText('보드 로드 중...')
+    // query server for single board by id (server supports ?id=)
+    ;(async function(){
       try {
-        const res = await fetch('/api/boards')
-        const list = await res.json()
-        const found = Array.isArray(list) ? list.find(b => String(b.id) === String(boardId)) : null
-        setBoardMeta(found)
+        const res = await fetch(`/api/boards?id=${encodeURIComponent(boardId)}`)
+        if (res.status === 200) {
+          const obj = await res.json()
+          setBoardMeta(obj)
+          setMetaText('')
+          loadPosts(boardId)
+        } else if (res.status === 404) {
+          setBoardMeta(null)
+          setMetaText(`보드를 찾을 수 없습니다 (id:${boardId})`)
+        } else {
+          const body = await res.text().catch(()=>null)
+          console.warn('board id fetch unexpected', res.status, body)
+          setBoardMeta(null)
+          setMetaText('보드 메타를 불러오지 못했습니다. 콘솔 확인')
+        }
       } catch (err) {
         console.warn('board meta load failed', err)
         setBoardMeta(null)
+        setMetaText('보드 메타를 불러오지 못했습니다. 콘솔 확인')
       }
     })()
-    loadPosts(boardId)
   }, [loadPosts])
 
   const loadBoardByGrid = useCallback(async (gx, gy) => {
     setMetaText('격자 보드 조회 중...')
     try {
-      const res = await fetch('/api/boards')
-      const list = await res.json()
-      const found = Array.isArray(list) ? list.find(b => {
-        const bx = (b.grid_x != null) ? b.grid_x : b.x
-        const by = (b.grid_y != null) ? b.grid_y : b.y
-        return bx === Number(gx) && by === Number(gy)
-      }) : null
-      if (found) {
-        setResolvedBoardId(found.id)
+      const res = await fetch(`/api/boards?grid_x=${encodeURIComponent(gx)}&grid_y=${encodeURIComponent(gy)}`)
+      if (res.status === 200) {
+        const obj = await res.json()
+        setResolvedBoardId(obj.id)
         setMetaText(`grid: ${gx},${gy}`)
-        loadPosts(found.id)
+        loadPosts(obj.id)
+      } else if (res.status === 404) {
+        setMetaText(`해당 격자의 게시판을 찾을 수 없습니다 (grid:${gx},${gy}).`)
+        setResolvedBoardId(null)
+        setBoardMeta(null)
       } else {
-        setMetaText(`해당 격자의 게시판을 찾을 수 없습니다 (grid:${gx},${gy}).`)        
+        const body = await res.text().catch(()=>null)
+        console.warn('board grid fetch unexpected', res.status, body)
+        setMetaText('보드 메타를 불러오지 못했습니다. 콘솔 확인')
       }
     } catch (err) {
       console.error('boards fetch failed', err)
