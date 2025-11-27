@@ -23,6 +23,17 @@ Next.js (페이지 + API Routes) 기반의 지도형 게시판 프로젝트입�
 - `migrations/postgres_create_tables.sql` — DB 스키마
 - `scripts/migrate.js` — 마이그레이션 실행 스크립트
 
+MapLibre (지도 라이브러리)
+-
+- 이 프로젝트는 MapLibre GL JS를 사용합니다. 클라이언트 지도 코드는 `pages/rasterMap2.js`(및 일부 `pages/*.js`)에 있으며, MapLibre 관련 CSS/JS는 `public/`의 정적 파일이나 CDN을 통해 로드됩니다.
+- 기본 타일/스타일: 레스터 맵은 OpenStreetMap (OSM) 타일을 기본으로 사용합니다 (예: `https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png`). 타일 공급자를 바꾸려면 `pages/rasterMap2.js` 안의 `style` 또는 `raster` 레이어 설정을 편집하세요. OSM을 사용할 경우 저작권 표기(Attribution)를 유지하세요.
+- 커스터마이즈 포인트:
+  - Map 초기 옵션: 중심 좌표, 줌, min/max zoom, bearing 등은 `pages/rasterMap2.js`에서 설정됩니다.
+  - 타일/스타일 변경: `map.addSource`/`map.addLayer` 호출에서 `url` 또는 `tiles` 값을 교체합니다.
+  - CSS: MapLibre의 기본 스타일은 `public/maplibre.css` 또는 페이지 내 `<link>`로 로드된 CSS를 통해 적용됩니다.
+  - 성능/디바이스: 모바일 성능을 개선하려면 `antialias`, `pitchWithRotate` 등의 옵션을 조정하세요.
+
+
 환경 변수
 -
 - `DATABASE_URL` — PostgreSQL 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname?sslmode=require`)
@@ -251,7 +262,6 @@ COMMIT;
 -
 - 사이트 아이콘은 `public/icon.png`로 추가되어 있으며, 정적 랜딩 페이지(`public/index.html`)와 Next.js 헤드(`pages/_app.js`)에 파비콘 링크가 설정되어 있습니다.
 - 일부 브라우저에서 파비콘이 나타나지 않으면 캐시 문제일 수 있으니 강력 새로고침(Ctrl+F5) 또는 시크릿 창에서 확인해 보세요.
-- `favicon.ico`를 추가로 생성하려면 `public/icon.png`에서 변환하여 `public/favicon.ico`로 두면 대부분의 브라우저에서 자동으로 사용됩니다. 원하시면 제가 `favicon.ico`를 생성해 추가해 드립니다.
 
 **지도 상태 유지 및 보드 가시화(Heatmap Overlay)**
 
