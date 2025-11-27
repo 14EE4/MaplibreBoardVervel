@@ -5,18 +5,23 @@ export default async function handler(req, res) {
 
   try {
     if (method === 'GET') {
-      // return board fields needed by the map overlay (grid coords and posts_count)
+      // support optional query params for direct lookups
+      const { id, grid_x, grid_y } = req.query || {}
+      if (id) {
+        const result = await query('SELECT id, name, grid_x, grid_y, posts_count, center_lng, center_lat FROM boards WHERE id = $1', [Number(id)])
+        const r = result.rows[0]
+        if (!r) return res.status(404).json({ error: 'not found' })
+        return res.status(200).json({ id: r.id, name: r.name, x: r.grid_x, y: r.grid_y, lng: r.center_lng, lat: r.center_lat, count: r.posts_count || 0 })
+      }
+      if (grid_x != null && grid_y != null) {
+        const result = await query('SELECT id, name, grid_x, grid_y, posts_count, center_lng, center_lat FROM boards WHERE grid_x = $1 AND grid_y = $2', [Number(grid_x), Number(grid_y)])
+        const r = result.rows[0]
+        if (!r) return res.status(404).json({ error: 'not found' })
+        return res.status(200).json({ id: r.id, name: r.name, x: r.grid_x, y: r.grid_y, lng: r.center_lng, lat: r.center_lat, count: r.posts_count || 0 })
+      }
+      // default: return list minimal fields
       const result = await query('SELECT id, name, grid_x, grid_y, posts_count, center_lng, center_lat FROM boards ORDER BY id')
-      // map to minimal public shape: id, name, x, y, lng, lat, count
-      const rows = (result.rows || []).map(r => ({
-        id: r.id,
-        name: r.name,
-        x: r.grid_x,
-        y: r.grid_y,
-        lng: r.center_lng,
-        lat: r.center_lat,
-        count: r.posts_count || 0
-      }))
+      const rows = (result.rows || []).map(r => ({ id: r.id, name: r.name, x: r.grid_x, y: r.grid_y, lng: r.center_lng, lat: r.center_lat, count: r.posts_count || 0 }))
       return res.status(200).json(rows)
     }
 
