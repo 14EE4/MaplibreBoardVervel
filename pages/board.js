@@ -102,6 +102,7 @@ export default function Board() {
       if (res.status === 200) {
         const obj = await res.json()
         setResolvedBoardId(obj.id)
+        setBoardMeta(obj)
         setMetaText(`grid: ${gx},${gy}`)
         loadPosts(obj.id)
       } else if (res.status === 404) {
