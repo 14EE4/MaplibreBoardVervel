@@ -1,90 +1,102 @@
-**MaplibreBoardVercel — 안내서 (한글)**
+# MaplibreBoardVercel — 안내서 (한글)
 
-**한줄 요약:** Next.js (페이지 + API Routes) 기반의 지도형 게시판 프로젝트. 서버리스(Vercel) 배포를 목표로 하며 데이터는 PostgreSQL(Neon 권장)을 사용합니다.
+한줄 요약
+-
+Next.js (페이지 + API Routes) 기반의 지도형 게시판 프로젝트입니다. 서버리스(Vercel) 환경에 배포되어 있으며, 운영 DB로 Neon의 PostgreSQL을 사용합니다.
 
-라이브 데모: https://maplibreboard.vercel.app
+라이브 데모
+-
+- https://maplibreboard.vercel.app
 
-운영 DB: Neon PostgreSQL (Neon)을 사용하고 있습니다.
-
-**현재 상태**
+핵심 상태(요약)
+-
 - 포팅된 기능: `board` 페이지, `rasterMap2` 페이지(맵 + 그리드), 게시글 CRUD API
-- 제거/비활성: 기존 Spring Boot 서버는 더 이상 앱 실행에 사용하지 않음(레포에 일부 남아있을 수 있음)
+- DB: Neon PostgreSQL (운영 DB)
+- 배포: Vercel (서버리스)
 
-**핵심 파일/위치**
-- `pages/board.js` — 보드(게시판) 클라이언트
-- `pages/rasterMap2.js` — MapLibre 기반 맵 + 그리드 뷰
+핵심 파일/위치
+-
+- `pages/board.js` — 보드(게시판) UI 및 클라이언트 로직
+- `pages/rasterMap2.js` — MapLibre 기반 맵 + 그리드 뷰 및 보드 오버레이
 - `pages/api/boards.js`, `pages/api/posts.js` — 보드·게시글 서버리스 API
-- `lib/db.js` — PostgreSQL 연결(전역 Pool 재사용 패턴)
+- `lib/db.js` — PostgreSQL 연결(Pool 재사용 패턴)
 - `migrations/postgres_create_tables.sql` — DB 스키마
 - `scripts/migrate.js` — 마이그레이션 실행 스크립트
 
-**필수 환경변수**
+환경 변수
+-
 - `DATABASE_URL` — PostgreSQL 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname?sslmode=require`)
+- (선택) `ADMIN_PASSWORD` — 관리자 페이지 구현 시 사용
 
-**로컬 개발 (PowerShell 예시)**
-
-1) 의존성 설치
+로컬 개발 (PowerShell)
+-
+1. 의존성 설치
 
 ```powershell
 npm.cmd install
 ```
 
-2) 환경변수 설정(임시 세션)
+2. 환경변수(임시 세션 예)
 
 ```powershell
 $env:DATABASE_URL = "postgresql://<user>:<pass>@<host>:<port>/<db>?sslmode=require"
 ```
 
-3) 마이그레이션 실행 (데이터베이스가 준비되어 있어야 함)
+3. 마이그레이션 실행 (DB 준비 필요)
 
 ```powershell
 node scripts/migrate.js
 ```
 
-4) 개발 서버 시작
+4. 개발 서버 시작
 
 ```powershell
 npm.cmd run dev
 ```
 
-5) 확인 URL
+확인 URL
+-
 - 보드: `http://localhost:3000/board?id=<BOARD_ID>` 또는 `http://localhost:3000/board?grid_x=<X>&grid_y=<Y>`
 - 레스터맵: `http://localhost:3000/rasterMap2`
 
-**프로덕션 빌드 / Vercel 배포**
-
-1. Vercel 프로젝트 생성 후 레포 연결
-2. `Settings > Environment Variables`에 `DATABASE_URL` 추가
+프로덕션 빌드 / Vercel 배포
+-
+1. Vercel 프로젝트 생성 및 레포 연결
+2. Vercel 설정에서 `DATABASE_URL`(및 필요 시 `ADMIN_PASSWORD`)를 Environment Variables에 추가
 3. (권장) 마이그레이션을 Vercel 배포 전에 수동으로 실행
-4. Vercel이 자동 빌드/배포 수행 — 빌드 커맨드: `npm run build`
+4. Vercel이 자동으로 빌드/배포합니다 (빌드 커맨드: `npm run build`)
 
-라이브 사이트: https://maplibreboard.vercel.app
+운영(라이브)
+-
+- 라이브 사이트: https://maplibreboard.vercel.app
+- 운영 DB: Neon PostgreSQL
 
-**마이그레이션 및 DB 참고**
-- DDL 파일: `migrations/postgres_create_tables.sql` — 보드와 게시글(또는 posts) 테이블을 생성합니다.
-- 마이그레이션 스크립트는 단순히 SQL을 실행하므로, 운영 DB에는 사전 검토 후 적용하세요.
+지도 상태 유지 및 보드 가시화(Heatmap)
+-
+- 지도 뷰 상태 유지
+  - `pages/rasterMap2.js`는 사용자가 보고 있던 지도 상태(중심 좌표, 줌, 베어링 등)를 `localStorage`(`rasterMap2-state`)에 저장합니다.
+  - 지도 이동/줌/회전 이벤트에서 상태를 갱신하고, 페이지 로드 시 해당 상태가 있으면 복원합니다.
+  - 초기화: 개발자 도구에서 `localStorage.removeItem('rasterMap2-state')`로 초기화할 수 있습니다.
 
-**관리자 페이지(현재 구현 상태)**
-- `pages/admin.js`에는 클라이언트 사이드 비밀번호 게이트가 있습니다. 현재 동작은 브라우저 세션 기반이며, 보안상 취약합니다.
-- 권장: `ADMIN_PASSWORD`를 서버 환경변수로 두고, 서버사이드 로그인(토큰/쿠키)을 구현하세요. 필요하면 제가 구현해 드립니다.
+- 보드 기반 색상 오버레이(Heatmap-like)
+  - 데이터: API에서 반환되는 각 보드의 `count` 또는 DB의 `posts_count`를 사용합니다.
+  - 색상 매핑: 게시글 수를 0..1로 정규화한 값 `v`를 기준으로 `#3B82F6`(파랑) → `#EF4444`(빨강)으로 선형 보간합니다.
+  - 불투명도: 기본 반투명(예: alpha 0.25~0.4)으로 설정하여 지도 타일을 가리지 않게 합니다.
+  - 조정 위치: `pages/rasterMap2.js`의 상수(스케일, 불투명도, 컬러)에서 커스터마이즈 가능합니다.
+  - 주의: `posts_count`가 최신이어야 하므로 게시글 생성/삭제 시 서버가 `boards.posts_count`를 유지하도록 구현되어 있는지 확인하세요.
 
-**API 요약(중요 엔드포인트)**
+API 요약
+-
 - `GET /api/boards?id=<id>` — 단일 보드 조회
 - `GET /api/boards?grid_x=<x>&grid_y=<y>` — 그리드 기준 단일 보드 조회
-- `POST /api/boards` — 보드 생성 (필요시 `grid_x`,`grid_y`,`center_lng`,`center_lat` 포함)
-- `GET /api/posts?board_id=<id>` — 보드의 게시글 조회
+- `POST /api/boards` — 보드 생성 (옵션: `grid_x`,`grid_y`,`center_lng`,`center_lat`)
+- `GET /api/posts?board_id=<id>` — 게시글 조회
 - `POST /api/posts` — 게시글 생성(비밀번호는 서버에서 해시)
-- `PUT /api/posts/:id` 및 `DELETE /api/posts/:id` — 수정/삭제 (비밀번호 검증 필요)
+- `PUT /api/posts/:id`, `DELETE /api/posts/:id` — 수정/삭제(비밀번호 검증 필요)
 
-**자주 발생하는 문제와 점검항목**
-- DB 연결 오류: `DATABASE_URL` 값이 올바른지, 외부 접속(방화벽/sslmode) 허용 여부를 확인하세요.
-- 마이그레이션 실패: SQL 에러 메시지에 따라 기존 인덱스/테이블 충돌을 해결해야 합니다.
-- 게시판 메타(이름/좌표)가 안보이는 문제: `/api/boards?grid_x=...&grid_y=...` 호출이 200이 나오는지 확인하세요. 404이면 보드가 DB에 없습니다.
-
-**샘플 명령(테스트 데이터 삽입)**
+샘플 데이터 삽입 (트랜잭션 예)
 
 ```sql
--- 예시: 보드와 게시글을 트랜잭션으로 추가
 BEGIN;
 WITH b AS (
   INSERT INTO boards (name, grid_x, grid_y, center_lng, center_lat, meta)
@@ -97,124 +109,28 @@ UPDATE boards SET posts_count = posts_count + 1 WHERE id = (SELECT id FROM b);
 COMMIT;
 ```
 
-**다음 권장 작업(옵션)**
+자주 발생하는 문제 및 점검
+-
+- DB 연결 오류: `DATABASE_URL`이 정확한지, 외부 접속(방화벽/SSL) 설정을 확인하세요.
+- 마이그레이션 실패: 기존 테이블/인덱스가 남아있을 경우 수동 정리 후 재실행하세요.
+- 보드 메타 정보가 보이지 않을 때: `/api/boards?grid_x=...&grid_y=...` 호출 결과(200/404)를 확인하세요.
+
+다음 권장 작업
+-
 - 서버사이드 관리자 인증(토큰/HttpOnly cookie) 구현
 - API 입력 검증 강화 (Joi 등)
 - E2E 테스트 및 샘플 데이터 시드 추가
 
----
-필요하시면 제가 `README`에 추가로 포함할 내용을 반영하거나, Vercel 배포 설정(`vercel.json`) 생성, 또는 서버사이드 관리자 인증을 구현해 드리겠습니다.
-
-# MaplibreBoardVervel
-
-현재 상태
+확인된 이슈
 -
-- 프레임워크: Next.js (페이지 + API Routes)
-- 배포 대상: Vercel (서버리스)
-- DB: PostgreSQL (외부 Neon 권장)
-- 포팅된 기능: `board` 페이지, `rasterMap2` 페이지(맵 관련 기능)
-- 제거/비활성: 기존 Spring Boot(자바/Gradle) 관련 파일은 레포에서 제거됨
+- 0,0 클릭 시 72,0으로 이동되는 문제 (디버깅 필요)
 
-주요 파일/위치
+문의/지원
 -
-- `pages/board.js` — 게시판(보드) UI 및 클라이언트 로직 포팅
-- `pages/rasterMap2.js` — MapLibre 기반 레스터맵 클라이언트 포팅
-- `pages/api/...` — 서버리스 API 엔드포인트(boards/posts 등)
-- `lib/db.js` — Postgres 연결(Pool) 헬퍼(서버리스 환경 재사용 패턴)
-- `migrations/postgres_create_tables.sql` — Postgres DDL
-- `scripts/migrate.js` — 간단한 마이그레이션 실행기
+원하시면 Vercel 설정(`vercel.json`), 서버사이드 로그인, 또는 마이그레이션/샘플 데이터 적용을 도와드리겠습니다.
+**MaplibreBoardVercel — 안내서 (한글)**
 
-사전 준비
--
-1. Node.js (권장 최신 LTS)
-2. Powershell 환경(Windows): `npm.cmd` 사용 권장
-3. 외부 PostgreSQL 인스턴스 (예: Neon)
-
-환경 변수
--
-- `DATABASE_URL` — PostgreSQL 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname`)
-
-로컬 개발 (PowerShell 예시)
--
-1. 저장소 루트에서 의존성 설치
-
-```powershell
-npm.cmd install
-```
-
-2. 로컬 환경 파일 생성 (예제)
-
-```powershell
-"""
-DATABASE_URL=postgresql://user:pass@host:5432/dbname
-""" > .env.local
-```
-# MaplibreBoardVervel
-
-현재 상태
--
-- 프레임워크: Next.js (페이지 + API Routes)
-- 배포 대상: Vercel (서버리스)
-- DB: PostgreSQL (외부 Neon 권장)
-- 포팅된 기능: `board` 페이지, `rasterMap2` 페이지(맵 관련 기능)
-- 제거/비활성: 기존 Spring Boot(자바/Gradle) 관련 파일은 레포에서 제거됨
-
-주요 파일/위치
--
-- `pages/board.js` — 게시판(보드) UI 및 클라이언트 로직 포팅
-- `pages/rasterMap2.js` — MapLibre 기반 레스터맵 클라이언트 포팅
-- `pages/api/...` — 서버리스 API 엔드포인트(boards/posts 등)
-- `lib/db.js` — Postgres 연결(Pool) 헬퍼(서버리스 환경 재사용 패턴)
-- `migrations/postgres_create_tables.sql` — Postgres DDL
-- `scripts/migrate.js` — 간단한 마이그레이션 실행기
-
-사전 준비
--
-1. Node.js (권장 최신 LTS)
-2. Powershell 환경(Windows): `npm.cmd` 사용 권장
-3. 외부 PostgreSQL 인스턴스 (예: Neon)
-
-환경 변수
--
-- `DATABASE_URL` — PostgreSQL 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname`)
-
-로컬 개발 (PowerShell 예시)
--
-1. 저장소 루트에서 의존성 설치
-
-```powershell
-npm.cmd install
-```
-
-2. 로컬 환경 파일 생성 (예제)
-
-```powershell
-"""
-DATABASE_URL=postgresql://user:pass@host:5432/dbname
-""" > .env.local
-```
-
-3. 마이그레이션 실행(데이터베이스가 준비되어 있어야 함)
-
-```powershell
-node scripts/migrate.js
-```
-
-4. 개발 서버 시작
-
-```powershell
-npm.cmd run dev
-```
-
-프로덕션 빌드
--
-```powershell
-npm.cmd run build
-```
-
-Vercel 배포
--
-1. Vercel 프로젝트를 생성합니다.
+**한줄 요약:** Next.js (페이지 + API Routes) 기반의 지도형 게시판 프로젝트. 서버리스(Vercel) 배포를 목표로 하며 데이터는 PostgreSQL(Neon 권장)을 사용합니다.
 2. Vercel 환경 변수에 `DATABASE_URL` 값을 추가합니다.
 3. 레포를 연결하면 Vercel이 자동으로 빌드/배포합니다.
 
