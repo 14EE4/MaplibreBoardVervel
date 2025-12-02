@@ -3,7 +3,7 @@
 ## 간단 요약
 - Next.js(페이지 + API Routes) 기반의 지도형 게시판입니다. MapLibre GL을 사용해 그리드 단위 보드를 시각화하고 게시글 CRUD는 Next.js API Routes로 제공합니다. 운영 DB로 Neon/Postgres를 권장합니다.
 
-## 라이브 데모
+## vercel 배포 주소
 - https://maplibreboard.vercel.app
 
 ## 빠른 링크
@@ -62,7 +62,6 @@ psql "${env:DATABASE_URL}" -f migrations/neon_init.sql
 - (선택) 로컬스토리지 키를 `map-state`로 변경하려면 클라이언트 코드 전체를 함께 수정하세요.
 
 ## MapLibre (지도 라이브러리)
-
 이 프로젝트는 MapLibre GL JS를 사용합니다. 클라이언트 지도 코드는 `pages/map.js`(및 일부 `pages/*.js`)에 있으며, MapLibre 관련 CSS/JS는 `public/`의 정적 파일이나 CDN을 통해 로드됩니다.
 기본 타일/스타일: 레스터 맵은 OpenStreetMap (OSM) 타일을 기본으로 사용합니다 (예: `https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png`). 타일 공급자를 바꾸려면 `pages/map.js` 안의 `style` 또는 `raster` 레이어 설정을 편집하세요. OSM을 사용할 경우 저작권 표기(Attribution)를 유지하세요.
 - 커스터마이즈 포인트:
