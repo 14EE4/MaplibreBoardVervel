@@ -1,4 +1,4 @@
-# MaplibreBoardVercel — 안내서 (한글)
+# MaplibreBoardVercel
 
 한줄 요약
 -
