@@ -3,7 +3,7 @@
 간단 요약
 - Next.js(페이지 + API Routes) 기반의 지도형 게시판 프로젝트입니다. MapLibre GL을 사용해 그리드 단위 보드를 시각화하고, 게시글 CRUD는 Next.js API Routes로 제공합니다. 운영 DB로 Neon/Postgres를 권장합니다.
 
-라이브 데모
+vercel 배포 페이지
 - https://maplibreboard.vercel.app
 
 빠른 링크
