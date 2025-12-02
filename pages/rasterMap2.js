@@ -173,6 +173,50 @@ export default function RasterMap2() {
           }).catch(function(err){ console.warn('load boards failed', err) })
         }
 
+        // Attach common map event handlers (call after each map creation)
+        function attachMapHandlers() {
+          try { map.getCanvas().style.cursor = 'crosshair' } catch (e) { console.warn('cursor set failed', e) }
+
+          map.on('load', function(){ ensureGridLayer(); updateGrid(); ensureBoardsLayer(); updateBoardsOverlay(); })
+
+          map.on('moveend', function(){
+            try {
+              const c = map.getCenter(); const z = map.getZoom();
+              // preserve mode if present
+              const st = JSON.parse(localStorage.getItem('rasterMap2-state')||'{}'); st.center = [c.lng, c.lat]; st.zoom = z; localStorage.setItem('rasterMap2-state', JSON.stringify(st))
+            } catch (e) {}
+            updateGrid(); updateBoardsOverlay();
+          })
+
+          map.on('zoomend', function(){
+            try { const c = map.getCenter(); const z = map.getZoom(); const st = JSON.parse(localStorage.getItem('rasterMap2-state')||'{}'); st.center = [c.lng, c.lat]; st.zoom = z; localStorage.setItem('rasterMap2-state', JSON.stringify(st)) } catch(e){}
+            updateGrid()
+          })
+
+          map.on('click', function(e){
+            try {
+              const lng = e.lngLat.lng
+              const lat = e.lngLat.lat
+              const size = gridState.sizeDeg
+              const gridX = Math.floor((lng + 180) / size)
+              const gridY = Math.floor((lat + 90) / size)
+              const centerLng = gridX * size - 180 + size/2
+              const centerLat = gridY * size - 90 + size/2
+
+              fetch('/api/boards/grid/' + encodeURIComponent(gridX) + '/' + encodeURIComponent(gridY) + '/ensure', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ center_lng: centerLng, center_lat: centerLat })
+              })
+              .then(function(res){ if (!res.ok) throw new Error('서버 에러'); return res.json() })
+              .then(function(data){
+                // Navigate using grid query format
+                window.location.href = '/board?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY)
+                try { updateBoardsOverlay() } catch(e) {}
+              })
+              .catch(function(err){ console.error('grid ensure error', err); alert('게시판 생성/열기에 실패했습니다. 콘솔 확인') })
+            } catch (err) { console.error('grid click handler failed', err) }
+          })
+        }
+
         // UI control
         const gridControl = document.createElement('div')
         gridControl.style.position = 'absolute'
