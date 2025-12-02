@@ -51,20 +51,11 @@ export default function RasterMap2() {
               }
             }))
           } else if (mode === 'globe') {
-            // Globe projection — attempt to use raster OSM with globe projection; visual quality may vary.
+            // Globe projection using MapLibre demo globe style
+            // See: https://demotiles.maplibre.org/globe.json
             map = new maplibregl.Map(Object.assign({}, baseOpts, {
               projection: 'globe',
-              style: {
-                version: 8,
-                sources: {
-                  'raster-tiles': {
-                    type: 'raster',
-                    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-                    tileSize: 256
-                  }
-                },
-                layers: [{ id: 'simple-tiles', type: 'raster', source: 'raster-tiles', attribution: '© OpenStreetMap contributors' }]
-              }
+              style: 'https://demotiles.maplibre.org/globe.json'
             }))
           } else {
             // default: OpenStreetMap raster
