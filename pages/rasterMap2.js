@@ -82,8 +82,8 @@ export default function RasterMap2() {
         try { const s = JSON.parse(localStorage.getItem('rasterMap2-state')); if (s && s.mode) savedMode = s.mode } catch (e) { savedMode = null }
         const currentMode = savedMode || 'osm'
         createMap(currentMode)
-
-        try { map.getCanvas().style.cursor = 'crosshair' } catch (e) { console.warn('cursor set failed', e) }
+        // attach handlers (sets cursor, handlers) after map creation
+        try { attachMapHandlers() } catch (e) { console.warn('attachMapHandlers failed', e) }
 
         const GRID_SOURCE = 'geo-grid-source'
         const GRID_LAYER = 'geo-grid-layer'
@@ -256,43 +256,9 @@ export default function RasterMap2() {
         toggle.addEventListener('change', function(){ gridState.enabled = !!toggle.checked; updateGrid(); })
         sizeSelect.addEventListener('change', function(){ gridState.sizeDeg = parseFloat(sizeSelect.value) || 5; updateGrid(); })
         modeSelect.addEventListener('change', function(){ try { const m = modeSelect.value; // persist
-          const st = JSON.parse(localStorage.getItem('rasterMap2-state')||'{}'); st.mode = m; localStorage.setItem('rasterMap2-state', JSON.stringify(st)); createMap(m); map.once('load', function(){ ensureGridLayer(); updateGrid(); ensureBoardsLayer(); updateBoardsOverlay(); }) } catch(e){ console.warn('mode change failed', e) } })
+          const st = JSON.parse(localStorage.getItem('rasterMap2-state')||'{}'); st.mode = m; localStorage.setItem('rasterMap2-state', JSON.stringify(st)); createMap(m); try { attachMapHandlers() } catch(e) { console.warn('attachMapHandlers after mode change failed', e) } } catch(e){ console.warn('mode change failed', e) } })
 
-        map.on('load', function(){ ensureGridLayer(); updateGrid(); ensureBoardsLayer(); updateBoardsOverlay(); })
-        map.on('moveend', function(){
-          try {
-            const c = map.getCenter(); const z = map.getZoom();
-            localStorage.setItem('rasterMap2-state', JSON.stringify({ center: [c.lng, c.lat], zoom: z }))
-          } catch (e) {}
-          updateGrid(); updateBoardsOverlay();
-        })
-        map.on('zoomend', function(){
-          try { const c = map.getCenter(); const z = map.getZoom(); localStorage.setItem('rasterMap2-state', JSON.stringify({ center: [c.lng, c.lat], zoom: z })) } catch(e){}
-          updateGrid()
-        })
-
-        map.on('click', function(e){
-          try {
-            const lng = e.lngLat.lng
-            const lat = e.lngLat.lat
-            const size = gridState.sizeDeg
-            const gridX = Math.floor((lng + 180) / size)
-            const gridY = Math.floor((lat + 90) / size)
-            const centerLng = gridX * size - 180 + size/2
-            const centerLat = gridY * size - 90 + size/2
-
-            fetch('/api/boards/grid/' + encodeURIComponent(gridX) + '/' + encodeURIComponent(gridY) + '/ensure', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ center_lng: centerLng, center_lat: centerLat })
-            })
-            .then(function(res){ if (!res.ok) throw new Error('서버 에러'); return res.json() })
-            .then(function(data){
-              // Regardless of whether the server returned an id, navigate using grid query format
-              window.location.href = '/board?grid_x=' + encodeURIComponent(gridX) + '&grid_y=' + encodeURIComponent(gridY)
-              try { updateBoardsOverlay() } catch(e) {}
-            })
-            .catch(function(err){ console.error('grid ensure error', err); alert('게시판 생성/열기에 실패했습니다. 콘솔 확인') })
-          } catch (err) { console.error('grid click handler failed', err) }
-        })
+        // Event handlers are attached inside `attachMapHandlers()` to avoid duplicates.
 
       } catch (err) { console.error('map init failed', err) }
     }).catch((err)=>{ console.warn('maplibre not ready', err) })
