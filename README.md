@@ -131,6 +131,12 @@ psql "${env:DATABASE_URL}" -f migrations/neon_init.sql
     - 비밀번호 입력 후 수정, 삭제 가능(비밀번호가 다르면 불가 팝업 메시지)
     - 비밀번호가 없는 글의 경우 삭제, 수정 불가
 
+## DB 구조
+github 레포지트리의 backup에서 테이블 확인가능
+  - boards 테이블
+    - 기본키: id, 속성(name, grid_x, grid_y, center_lng, center_lat, meta, posts_count, created_at,
+  updated_at)
+    - 지도에서 타일 클릭시 해당 좌표의 게시판이 없으면 boards에 추가
 ## 확인된 문제
 - 0,0 클릭 시 72,0으로 이동되는 문제(디버깅 필요)
 
