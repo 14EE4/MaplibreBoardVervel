@@ -79,168 +79,93 @@ npm.cmd run dev
 -
 - 보드: `http://localhost:3000/board?id=<BOARD_ID>` 또는 `http://localhost:3000/board?grid_x=<X>&grid_y=<Y>`
 - 레스터맵: `http://localhost:3000/map`
+# MaplibreBoardVercel
 
-프로덕션 빌드 / Vercel 배포
--
-1. Vercel 프로젝트 생성 및 레포 연결
-2. Vercel 설정에서 `DATABASE_URL`(및 필요 시 `ADMIN_PASSWORD`)를 Environment Variables에 추가
-3. (권장) 마이그레이션을 Vercel 배포 전에 수동으로 실행
-4. Vercel이 자동으로 빌드/배포합니다 (빌드 커맨드: `npm run build`)
+간단 요약
+- Next.js 기반의 지도형 게시판 프로젝트입니다. MapLibre GL을 사용해 그리드 단위 보드를 시각화하고, 게시글 CRUD는 Next.js API Routes로 제공합니다. 운영 DB로 Neon/Postgres를 권장합니다.
 
-운영(라이브)
--
-- 라이브 사이트: https://maplibreboard.vercel.app
-- 운영 DB: Neon PostgreSQL
+빠른 링크
+- 맵 페이지: `/map` (이전 `/rasterMap2`는 `/map`으로 리디렉트됨)
 
-지도 상태 유지 및 보드 가시화(Heatmap)
--
-- 지도 뷰 상태 유지
-  - `pages/map.js`는 사용자가 보고 있던 지도 상태(중심 좌표, 줌, 베어링 등)를 `localStorage`(`rasterMap2-state`)에 저장합니다.
-  - 지도 이동/줌/회전 이벤트에서 상태를 갱신하고, 페이지 로드 시 해당 상태가 있으면 복원합니다.
-  - 초기화: 개발자 도구에서 `localStorage.removeItem('rasterMap2-state')`로 초기화할 수 있습니다.
+핵심 기능
+- 맵 위에 그리드 단위 보드 표시(heatmap 스타일)
+- 그리드 클릭 → 보드 보장(생성) → `/board?grid_x=...&grid_y=...`로 이동
+- 게시글 CRUD: `/api/posts` (POST/GET/PUT/DELETE)
+- 보드 API: `/api/boards` (목록/단일/생성), 그리드 보장: `/api/boards/grid/:x/:y/ensure`
 
-- 보드 기반 색상 오버레이(Heatmap-like)
-  - 데이터: API에서 반환되는 각 보드의 `count` 또는 DB의 `posts_count`를 사용합니다.
-  - 색상 매핑: 게시글 수를 0..1로 정규화한 값 `v`를 기준으로 `#3B82F6`(파랑) → `#EF4444`(빨강)으로 선형 보간합니다.
-  - 불투명도: 기본 반투명(예: alpha 0.25~0.4)으로 설정하여 지도 타일을 가리지 않게 합니다.
-  - 조정 위치: `pages/map.js`의 상수(스케일, 불투명도, 컬러)에서 커스터마이즈 가능합니다.
-  - 주의: `posts_count`가 최신이어야 하므로 게시글 생성/삭제 시 서버가 `boards.posts_count`를 유지하도록 구현되어 있는지 확인하세요.
+프로젝트 구조 (요약)
+- `pages/`
+  - `pages/map.js` — MapLibre 기반 지도(모드 전환 포함)
+  - `pages/rasterMap2.js` — 호환 리디렉트 페이지(`/map`으로 이동)
+  - `pages/board.js` — 보드 페이지 (게시글 조회·작성·수정·삭제)
+  - `pages/admin.js` — 간단한 관리자 페이지
+  - `pages/api/boards.js` — 보드 목록/단일/생성 API
+  - `pages/api/boards/grid/[gridX]/[gridY]/ensure.js` — 그리드 보장(POST)
+  - `pages/api/posts.js` — 게시글 CRUD API
+- `lib/db.js` — `pg` Pool 전역 캐시(서버리스 친화적)
+- `migrations/neon_init.sql` — Postgres 스키마(boards, posts, 트리거 등)
+- `public/` — 정적 파일(랜딩 `index.html`, `icon.png`)
+- `package.json` — 스크립트 및 의존성
 
-API 요약
--
-- `GET /api/boards?id=<id>` — 단일 보드 조회
-- `GET /api/boards?grid_x=<x>&grid_y=<y>` — 그리드 기준 단일 보드 조회
-- `POST /api/boards` — 보드 생성 (옵션: `grid_x`,`grid_y`,`center_lng`,`center_lat`)
-- `GET /api/posts?board_id=<id>` — 게시글 조회
-- `POST /api/posts` — 게시글 생성(비밀번호는 서버에서 해시)
-- `PUT /api/posts/:id`, `DELETE /api/posts/:id` — 수정/삭제(비밀번호 검증 필요)
+환경 변수
+- `DATABASE_URL` — Postgres 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname?sslmode=require`)
 
-샘플 데이터 삽입 (트랜잭션 예)
+로컬 개발
+1) 의존성 설치
 
-```sql
-BEGIN;
-WITH b AS (
-  INSERT INTO boards (name, grid_x, grid_y, center_lng, center_lat, meta)
-  VALUES ('예시 보드', 61, 25, 128.5, 36.2, '{}'::jsonb)
-  RETURNING id
-)
-INSERT INTO posts (board_id, author, content, password)
-SELECT id, '테스트', '안녕하세요', 'pw' FROM b;
-UPDATE boards SET posts_count = posts_count + 1 WHERE id = (SELECT id FROM b);
-COMMIT;
-```
-
-자주 발생하는 문제 및 점검
--
-- DB 연결 오류: `DATABASE_URL`이 정확한지, 외부 접속(방화벽/SSL) 설정을 확인하세요.
-- 마이그레이션 실패: 기존 테이블/인덱스가 남아있을 경우 수동 정리 후 재실행하세요.
-- 보드 메타 정보가 보이지 않을 때: `/api/boards?grid_x=...&grid_y=...` 호출 결과(200/404)를 확인하세요.
-
-다음 권장 작업
--
-- 서버사이드 관리자 인증(토큰/HttpOnly cookie) 구현
-- API 입력 검증 강화 (Joi 등)
-- E2E 테스트 및 샘플 데이터 시드 추가
-
-확인된 이슈
--
-- 0,0 클릭 시 72,0으로 이동되는 문제 (디버깅 필요)
-
-문의/지원
--
-원하시면 Vercel 설정(`vercel.json`), 서버사이드 로그인, 또는 마이그레이션/샘플 데이터 적용을 도와드리겠습니다.
-**MaplibreBoardVercel — 안내서 (한글)**
-
-**한줄 요약:** Next.js (페이지 + API Routes) 기반의 지도형 게시판 프로젝트. 서버리스(Vercel) 배포를 목표로 하며 데이터는 PostgreSQL(Neon 권장)을 사용합니다.
-2. Vercel 환경 변수에 `DATABASE_URL` 값을 추가합니다.
-3. 레포를 연결하면 Vercel이 자동으로 빌드/배포합니다.
-
-데이터베이스 관련 메모
--
-- `migrations/postgres_create_tables.sql` 파일에 스키마 정의가 있습니다. Neon 같은 외부 Postgres 인스턴스에 먼저 적용해야 합니다.
-- 마이그레이션/샘플 데이터 삽입 시 중복 인덱스나 FK 제약으로 실패하는 경우가 있으니, 오류 메시지를 확인하고 중복 레코드 정리 후 재시도하세요.
-
-제한사항 & TODO
--
-- 일부 서버측 비즈니스 로직(예: 패스워드 해싱/검증)이 아직 Node API로 완전히 포팅되지 않았을 수 있습니다. 그 부분은 `pages/api` 내부에서 추가 구현이 필요합니다.
-- 테스트: 마이그레이션 적용 후 엔드투엔드 테스트(게시글 생성/수정/삭제, 맵 연동)를 권장합니다.
-
-주요 변경 사항
--
-- `rasterMap.html`에 `map.html`과 동일한 노트(메모) 기능 추가
-  - 지도 클릭으로 입력 팝업(경도/위도 표시, 텍스트 입력, 저장/취소)
-  - 저장 시 `/api/notes`로 POST하여 DB에 저장, 팝업이 읽기 전용으로 전환
-  - 기존 노트는 `/api/notes` GET으로 로드하여 팝업으로 표시
-  - 노트 수정 지원: 읽기 팝업에서 "수정" 버튼으로 편집 팝업을 열어 PUT으로 업데이트
-  - 노트 삭제 지원: 읽기 팝업의 "삭제" 버튼으로 DELETE /api/notes/{id} 호출하여 삭제
-  - 10초 주기 폴링(poll)으로 새 노트가 있으면 자동으로 표시
-
-**프로젝트: MaplibreBoardVercel**
-
-**한줄 요약:** Next.js 기반 프론트엔드(페이지 + API Routes)와 PostgreSQL(Neon) 연동으로 지도 기반 게시판을 제공하는 프로젝트입니다. 주요 UI/API는 Next.js로 포팅되어 Vercel에 배포하기 쉽도록 구성되어 있습니다.
-
-**현재 상태(요약)**
-- `pages/board.js` : `board.html`을 React로 포팅 — 게시글 조회/작성/수정/삭제(비밀번호 검증) 클라이언트 로직 포함.
-`pages/map.js` : `rasterMap2.html`을 React로 포팅 — MapLibre(래스터 타일) 기반 그리드 및 보드 오버레이, 그리드 클릭 시 보드 생성/열기 기능 포함.
-- DB: PostgreSQL(Neon) 사용 권장. 마이그레이션 파일은 `migrations/postgres_create_tables.sql`에 있음 (단일 `posts` 테이블 방식).
-- DB 유틸: `lib/db.js` (pg Pool 전역 캐시) — Vercel 같은 서버리스 환경에서 연결 관리용.
-
-**프로젝트 구조(핵심)**
-- `package.json` — Next.js, 스크립트, 의존성
-- `pages/` — Next.js 페이지 및 API 라우트
-  - `pages/board.js`, `pages/map.js`
-  - `pages/api/boards.js`, `pages/api/posts.js` 등
-- `lib/db.js` — PostgreSQL 연결 풀
-- `migrations/postgres_create_tables.sql` — Postgres용 DDL
-- `scripts/migrate.js` — 마이그레이션 실행 스크립트 (NODE 환경에서 `DATABASE_URL` 사용)
-
-**필수 환경 변수**
-- `DATABASE_URL` — Neon/Postgres 연결 문자열 (예: `postgresql://user:pass@host:port/dbname?sslmode=require`)
-
-로컬 개발 (PowerShell 예)
-1) 세션에 `DATABASE_URL` 설정
 ```powershell
-$env:DATABASE_URL="postgresql://<user>:<pass>@<host>:<port>/<db>?sslmode=require"
+npm install
 ```
-2) 의존성 설치 및 마이그레이션 실행
+
+2) (선택) 환경변수 설정 (PowerShell 예)
+
 ```powershell
-npm.cmd install
-npm.cmd run migrate
+$env:DATABASE_URL = "postgresql://<user>:<pass>@<host>:<port>/<db>?sslmode=require"
 ```
-3) 개발 서버 시작
+
+3) 개발 서버 실행
+
 ```powershell
-npm.cmd run dev
+npm run dev
 ```
-4) 확인 URL
-- 보드 페이지: `http://localhost:3000/board?id=<BOARD_ID>`
-- 레스터 맵: `http://localhost:3000/map`
 
-DB 마이그레이션/구현 노트
-- 현재 `migrations/postgres_create_tables.sql`은 단일 `posts` 테이블과 `boards` 테이블을 생성합니다. `updated_at` 자동 갱신을 위한 트리거 함수도 포함되어 있습니다.
-- 기존 MySQL 스타일(격자별 `posts_grid_x_y` 테이블)은 운영·관리 부담이 커서 기본적으로 단일 테이블(또는 파티셔닝) 접근을 권장합니다.
-- 테이블 및 인덱스 생성 중 중복(예: `idx_boards_grid`) 오류가 발생하면 중복 `boards` 행을 제거/병합해야 합니다. (중복 탐지 및 병합 스크립트가 필요하면 도와드립니다.)
+마이그레이션
+- 저장소에 `migrations/neon_init.sql`이 있습니다. 이 SQL 파일을 Neon 또는 psql을 통해 적용하세요. (현재 `scripts/migrate.js`는 레포에 없을 수 있으므로 수동 적용 권장)
 
-API/기능 현황
-- `/api/boards` : 보드 조회/생성, 그리드 보드 보장(`grid/{x}/{y}/ensure`) 등 (Next API로 이식됨)
-- `/api/boards/:id/posts` : 게시글 CRUD (생성/수정/삭제/비밀번호 검증) — 클라이언트는 비밀번호(4자리 PIN)를 전송하고, 서버가 해시/검증해야 합니다. 현재 API가 DB 연동을 사용하지만, 비밀번호 해시 로직(예: bcrypt 또는 `pgcrypto`)이 완전히 포팅되었는지 확인하세요.
+예: psql (간단 예)
 
-운영/배포 (Vercel)
-- Vercel은 Next.js를 자동 인식합니다. 레포를 연결한 후 `Settings > Environment Variables`에 `DATABASE_URL`을 추가하세요.
-- `lib/db.js`의 전역 Pool 캐시를 사용해 Vercel의 커넥션 제한을 완화하십시오.
-- 마이그레이션은 배포 전에 실행하세요(Neon SQL Editor 권장). 프로덕션에서 DDL을 애플리케이션이 직접 실행하는 것은 권장하지 않습니다.
+```powershell
+# psql을 사용할 수 있는 환경에서
+psql "${env:DATABASE_URL}" -f migrations/neon_init.sql
+```
 
-테스트 데이터(예제)
-- 보드 생성 및 게시글 삽입(트랜잭션 예):
-```sql
-BEGIN;
-WITH b AS (
-  INSERT INTO boards (name, grid_x, grid_y, center_lng, center_lat, meta)
-  VALUES ('트랜잭션 보드', 1, 2, 128.1, 36.9, '{}'::jsonb)
-  RETURNING id
-)
-INSERT INTO posts (board_id, author, content, password)
-SELECT id, '테스트', '트랜잭션 글', 'pw123' FROM b;
-UPDATE boards SET posts_count = posts_count + 1 WHERE id = (SELECT id FROM b);
+핵심 API 요약
+- `GET /api/boards` — 보드 목록
+- `GET /api/boards?id=<id>` — 단일 보드
+- `GET /api/boards?grid_x=<x>&grid_y=<y>` — 그리드 보드
+- `POST /api/boards` — 보드 생성
+- `POST /api/boards/grid/:x/:y/ensure` — 그리드 보장
+
+- `GET /api/posts?board_id=<id>` — 게시글 목록
+- `POST /api/posts` — 게시글 생성 (비밀번호는 서버에서 SHA-256 해시)
+- `PUT /api/posts` — 게시글 수정
+- `DELETE /api/posts?id=<id>` — 게시글 삭제(비밀번호 검증)
+
+데이터베이스
+- `lib/db.js`는 `pg`의 `Pool`을 전역(`global.__pgPool`)에 캐시합니다. Vercel 같은 서버리스 환경에서 연결 수를 줄이기 위해 설계되었습니다.
+
+지도/클라이언트 노트
+- 맵 모드: `osm`(OSM 래스터), `sat`(예: Esri 래스터), `globe`(MapLibre globe 스타일)
+- 선택된 모드는 로컬스토리지 키 `rasterMap2-state`에 `mode`로 저장됩니다.
+- 보드 오버레이 색상은 API의 `posts_count` 값을 기반으로 보간됩니다.
+
+주의 및 권장 작업
+- 타일 제공자(OSM, Esri 등)의 이용약관과 저작권 표기를 지켜야 합니다. 페이지에 attribution 명시를 권장합니다。
+- 배포 전에 마이그레이션을 수동으로 적용하고 API가 정상 동작하는지 확인하세요。
+- (선택) `rasterMap2-state` 키를 `map-state` 같은 이름으로 변경하려면 클라이언트 코드 전체를 함께 수정하세요。
+
+도움이 필요하시면 알려주세요 — 마이그레이션 적용, Vercel 배포 설정, 또는 localStorage 키 일괄 변경을 도와드리겠습니다。
+
 COMMIT;
 ```
 
