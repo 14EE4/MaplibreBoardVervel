@@ -1,32 +1,45 @@
 # MaplibreBoardVercel
 
-간단 요약
-- Next.js(페이지 + API Routes) 기반의 지도형 게시판 프로젝트입니다. MapLibre GL을 사용해 그리드 단위 보드를 시각화하고, 게시글 CRUD는 Next.js API Routes로 제공합니다. 운영 DB로 Neon/Postgres를 권장합니다.
+## 간단 요약
+- Next.js(페이지 + API Routes) 기반의 지도형 게시판입니다. MapLibre GL을 사용해 그리드 단위 보드를 시각화하고 게시글 CRUD는 Next.js API Routes로 제공합니다. 운영 DB로 Neon/Postgres를 권장합니다.
 
-vercel 배포 페이지
+## 라이브 데모
 - https://maplibreboard.vercel.app
 
-빠른 링크
+## 빠른 링크
 - 맵 페이지: `/map` (이전 `/rasterMap2`는 `/map`으로 리디렉트됨)
 
-핵심 기능
+## 핵심 기능
 - 그리드 단위 보드 시각화(heatmap 스타일)
 - 그리드 클릭 → 보드 보장(생성) → `/board?grid_x=...&grid_y=...`로 이동
 - 게시글 CRUD: `/api/posts` (POST/GET/PUT/DELETE)
 - 보드 API: `/api/boards`, 그리드 보장: `/api/boards/grid/:x/:y/ensure`
 
-프로젝트 구조(요약)
+## 프로젝트 구조 (요약)
 - `pages/`
-  - `map.js` — MapLibre 기반 지도(모드 전환 포함)
-  - `rasterMap2.js` — 호환 리디렉트(`/map`)
-  - `board.js` — 보드 페이지 (게시글 조회·작성·수정·삭제)
-  - `admin.js` — 간단 관리자 페이지(비밀번호 입력으로 진입)
-  - `api/boards.js`, `api/posts.js`, `api/boards/grid/[gridX]/[gridY]/ensure.js`
+	- `map.js` — MapLibre 기반 지도(모드 전환 포함)
+	- `rasterMap2.js` — 호환 리디렉트(`/map`)
+	- `board.js` — 보드 페이지 (게시글 조회·작성·수정·삭제)
+	- `admin.js` — 간단 관리자 페이지(클라이언트 사이드 게이트)
+	- `api/boards.js`, `api/posts.js`, `api/boards/grid/[gridX]/[gridY]/ensure.js`
 - `lib/db.js` — `pg` Pool 전역 캐시(서버리스 친화적)
 - `migrations/neon_init.sql` — Postgres 스키마(boards, posts, 트리거 등)
 - `public/` — 정적 파일(랜딩 `index.html`, `icon.png`)
 
-핵심 API 요약
+## 환경 변수
+- `DATABASE_URL` — Postgres 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname?sslmode=require`)
+- (선택) `ADMIN_PASSWORD` — 관리용 비밀번호(권장: 서버사이드로 관리)
+
+## 마이그레이션
+- 저장소에 `migrations/neon_init.sql`이 있습니다. Neon이나 `psql`을 사용해 수동으로 적용하세요.
+
+예: psql 사용 예 (PowerShell)
+```powershell
+# psql이 설치된 환경에서
+psql "${env:DATABASE_URL}" -f migrations/neon_init.sql
+```
+
+## 핵심 API 요약
 - `GET /api/boards` — 보드 목록
 - `GET /api/boards?id=<id>` — 단일 보드
 - `GET /api/boards?grid_x=<x>&grid_y=<y>` — 그리드 보드
@@ -38,20 +51,20 @@ vercel 배포 페이지
 - `PUT /api/posts` — 게시글 수정
 - `DELETE /api/posts?id=<id>` — 게시글 삭제(비밀번호 검증)
 
-지도/클라이언트 노트
+## 지도 / 클라이언트 노트
 - 맵 모드: `osm`(OSM 래스터), `sat`(예: Esri 래스터), `globe`(MapLibre globe 스타일)
 - 선택된 모드는 로컬스토리지 키 `rasterMap2-state`에 저장됩니다(키 변경 시 클라이언트 전역 수정 필요).
 - 보드 오버레이(heatmap-like)는 API의 `posts_count` 값을 기반으로 색상을 보간해 반투명으로 표시합니다.
 
-주의 및 권장 작업
+## 주의 및 권장 작업
 - 타일 제공자(OSM, Esri 등)의 이용약관과 저작권 표기를 지켜야 합니다. 페이지에 attribution을 표시하세요.
 - 배포 전에 `migrations/neon_init.sql`을 적용하고 API가 정상 동작하는지 검증하세요.
 - (선택) 로컬스토리지 키를 `map-state`로 변경하려면 클라이언트 코드 전체를 함께 수정하세요.
 
-MapLibre (지도 라이브러리)
--
--- 이 프로젝트는 MapLibre GL JS를 사용합니다. 클라이언트 지도 코드는 `pages/map.js`(및 일부 `pages/*.js`)에 있으며, MapLibre 관련 CSS/JS는 `public/`의 정적 파일이나 CDN을 통해 로드됩니다.
--- 기본 타일/스타일: 레스터 맵은 OpenStreetMap (OSM) 타일을 기본으로 사용합니다 (예: `https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png`). 타일 공급자를 바꾸려면 `pages/map.js` 안의 `style` 또는 `raster` 레이어 설정을 편집하세요. OSM을 사용할 경우 저작권 표기(Attribution)를 유지하세요.
+## MapLibre (지도 라이브러리)
+
+이 프로젝트는 MapLibre GL JS를 사용합니다. 클라이언트 지도 코드는 `pages/map.js`(및 일부 `pages/*.js`)에 있으며, MapLibre 관련 CSS/JS는 `public/`의 정적 파일이나 CDN을 통해 로드됩니다.
+기본 타일/스타일: 레스터 맵은 OpenStreetMap (OSM) 타일을 기본으로 사용합니다 (예: `https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png`). 타일 공급자를 바꾸려면 `pages/map.js` 안의 `style` 또는 `raster` 레이어 설정을 편집하세요. OSM을 사용할 경우 저작권 표기(Attribution)를 유지하세요.
 - 커스터마이즈 포인트:
   - Map 초기 옵션: 중심 좌표, 줌, min/max zoom, bearing 등은 `pages/map.js`에서 설정됩니다.
   - 타일/스타일 변경: `map.addSource`/`map.addLayer` 호출에서 `url` 또는 `tiles` 값을 교체합니다.
@@ -93,28 +106,29 @@ MapLibre (지도 라이브러리)
 - 사이트 아이콘은 `public/icon.png`로 추가되어 있으며, 정적 랜딩 페이지(`public/index.html`)와 Next.js 헤드(`pages/_app.js`)에 파비콘 링크가 설정되어 있습니다.
 - 일부 브라우저에서 파비콘이 나타나지 않으면 캐시 문제일 수 있으니 강력 새로고침(Ctrl+F5) 또는 시크릿 창에서 확인해 보세요.
 
-**지도 상태 유지 및 보드 가시화(Heatmap Overlay)**
+## 지도 상태 유지 및 보드 가시화 (Heatmap Overlay)
 
--- **지도 뷰 상태 유지:** `pages/map.js`는 사용자가 보고 있던 지도 상태(중심 좌표, 줌 레벨, 베어링 등)를 `localStorage`에 저장합니다. 기본 동작은 다음과 같습니다:
-  - 저장 키: `rasterMap2-state`
-  - 저장 시점: 지도 이동/줌/회전 이벤트 발생 시 업데이트
-  - 로드 시점: 페이지 마운트 시 `localStorage`에 저장된 값이 있으면 해당 상태로 초기화합니다.
-  - 재현성: 브라우저 새로고침 또는 탭 재오픈 시 이전 위치와 줌 상태가 그대로 복원됩니다.
-  - 초기화 방법: 개발자 도구에서 `localStorage.removeItem('rasterMap2-state')` 또는 응용 프로그램 코드에서 초기화 로직을 추가하세요.
+### 지도 뷰 상태 유지
+`pages/map.js`는 사용자가 보고 있던 지도 상태(중심 좌표, 줌 레벨, 베어링 등)를 `localStorage`에 저장합니다. 기본 동작은 다음과 같습니다:
+- 저장 키: `rasterMap2-state`
+- 저장 시점: 지도 이동/줌/회전 이벤트 발생 시 업데이트
+- 로드 시점: 페이지 마운트 시 `localStorage`에 저장된 값이 있으면 해당 상태로 초기화합니다.
+- 재현성: 브라우저 새로고침 또는 탭 재오픈 시 이전 위치와 줌 상태가 그대로 복원됩니다.
+- 초기화 방법: 개발자 도구에서 `localStorage.removeItem('rasterMap2-state')` 또는 응용 프로그램 코드에서 초기화 로직을 추가하세요.
 
-- **보드 기반 색상 오버레이(Heatmap-like):** 맵 위에 그려지는 각 그리드(보드)는 DB의 `posts_count`(또는 API가 반환하는 `count`) 값에 따라 반투명 색상으로 표시됩니다. 동작 방식 요약:
-  - 데이터 소스: `pages/map.js`가 호출하는 `GET /api/boards` 또는 보드 리스트 API에서 각 보드의 `count`(또는 `posts_count`) 값을 사용합니다.
-  - 색상 매핑: 게시글 수를 최소값(min)과 최대값(max) 사이에서 정규화한 값 `v`(0..1)를 만든 후, `v=0`일 때 파란색(예: `#3B82F6`), `v=1`일 때 빨간색(예: `#EF4444`)을 선형 보간(interpolate)합니다.
-  - 불투명도(알파): 기본적으로 0.25~0.4 사이의 반투명으로 설정하여 지도 타일을 가리지 않게 합니다(코드에서 `opacity` 상수로 조정 가능).
-  - 시각적 효과: 게시글 수가 적으면 파란색(차가움), 많을수록 빨간색(뜨거움)으로 바뀌며, 색상은 그리드 단위로 채워집니다.
-  - 조정 포인트: `pages/map.js`의 상수 또는 컬러/스케일 함수를 변경하여 최소/최대 컷오프, 컬러 스케일(hsl/rgb), 불투명도 등을 조절할 수 있습니다.
+### 보드 기반 색상 오버레이 (Heatmap-like)
+맵 위에 그려지는 각 그리드(보드)는 DB의 `posts_count`(또는 API가 반환하는 `count`) 값에 따라 반투명 색상으로 표시됩니다. 동작 방식 요약:
+- 데이터 소스: `pages/map.js`가 호출하는 `GET /api/boards` 또는 보드 리스트 API에서 각 보드의 `count`(또는 `posts_count`) 값을 사용합니다.
+- 색상 매핑: 게시글 수를 최소값(min)과 최대값(max) 사이에서 정규화한 값 `v`(0..1)를 만든 후, `v=0`일 때 파란색(예: `#3B82F6`), `v=1`일 때 빨간색(예: `#EF4444`)을 선형 보간(interpolate)합니다.
+- 불투명도(알파): 기본적으로 0.25~0.4 사이의 반투명으로 설정하여 지도 타일을 가리지 않게 합니다(코드에서 `opacity` 상수로 조정 가능).
+- 시각적 효과: 게시글 수가 적으면 파란색(차가움), 많을수록 빨간색(뜨거움)으로 바뀌며, 색상은 그리드 단위로 채워집니다.
+- 조정 포인트: `pages/map.js`의 상수 또는 컬러/스케일 함수를 변경하여 최소/최대 컷오프, 컬러 스케일(hsl/rgb), 불투명도 등을 조절할 수 있습니다.
 
 참고: 색상 오버레이가 보이려면 보드 테이블의 `posts_count`가 최신 상태여야 합니다. `POST /api/posts`나 게시물 삭제/수정 시 서버가 `boards.posts_count`를 갱신하도록 구현되어 있는지 확인하세요. 샘플 데이터로 테스트하려면 README의 샘플 SQL로 몇 개 보드를 삽입한 뒤 `posts_count` 값을 변경해 보세요.
 
-**확인된 문제**
-0,0클릭시 72,0으로 이동되는 문제
+## 확인된 문제
+- 0,0 클릭 시 72,0으로 이동되는 문제(디버깅 필요)
 
-**TODO**
-~~맵 테마를 raster에서 위성, 지구본으로 변경하는 기능~~
-~~globe를 진짜 지구본으로~~
-검색 기능 - 검색창에 지명 입력하면 flyto로 해당 지점으로 날아감
+## TODO
+- 검색 기능: 지명 검색 → flyTo
+
