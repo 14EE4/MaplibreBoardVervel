@@ -1,27 +1,65 @@
 # MaplibreBoardVercel
 
-한줄 요약
--
-Next.js (페이지 + API Routes) 기반의 지도형 게시판 프로젝트입니다. 서버리스(Vercel) 환경에 배포되어 있으며, 운영 DB로 Neon의 PostgreSQL을 사용합니다.
+간단 요약
+- Next.js(페이지 + API Routes) 기반의 지도형 게시판 프로젝트입니다. MapLibre GL을 사용해 그리드 단위 보드를 시각화하고, 게시글 CRUD는 Next.js API Routes로 제공합니다. 운영 DB로 Neon/Postgres를 권장합니다.
 
 라이브 데모
--
 - https://maplibreboard.vercel.app
 
-핵심 상태(요약)
--
-- 포팅된 기능: `board` 페이지, `map` 페이지(맵 + 그리드), 게시글 CRUD API
-- DB: Neon PostgreSQL (운영 DB)
-- 배포: Vercel (서버리스)
+빠른 링크
+- 맵 페이지: `/map` (이전 `/rasterMap2`는 `/map`으로 리디렉트됨)
 
-핵심 파일/위치
--
-- `pages/board.js` — 보드(게시판) UI 및 클라이언트 로직
-- `pages/map.js` — MapLibre 기반 맵 + 그리드 뷰 및 보드 오버레이
-- `pages/api/boards.js`, `pages/api/posts.js` — 보드·게시글 서버리스 API
-- `lib/db.js` — PostgreSQL 연결(Pool 재사용 패턴)
-- `migrations/postgres_create_tables.sql` — DB 스키마
-- `scripts/migrate.js` — 마이그레이션 실행 스크립트
+핵심 기능
+- 그리드 단위 보드 시각화(heatmap 스타일)
+- 그리드 클릭 → 보드 보장(생성) → `/board?grid_x=...&grid_y=...`로 이동
+- 게시글 CRUD: `/api/posts` (POST/GET/PUT/DELETE)
+- 보드 API: `/api/boards`, 그리드 보장: `/api/boards/grid/:x/:y/ensure`
+
+프로젝트 구조(요약)
+- `pages/`
+  - `map.js` — MapLibre 기반 지도(모드 전환 포함)
+  - `rasterMap2.js` — 호환 리디렉트(`/map`)
+  - `board.js` — 보드 페이지 (게시글 조회·작성·수정·삭제)
+  - `admin.js` — 간단 관리자 페이지
+  - `api/boards.js`, `api/posts.js`, `api/boards/grid/[gridX]/[gridY]/ensure.js`
+- `lib/db.js` — `pg` Pool 전역 캐시(서버리스 친화적)
+- `migrations/neon_init.sql` — Postgres 스키마(boards, posts, 트리거 등)
+- `public/` — 정적 파일(랜딩 `index.html`, `icon.png`)
+
+환경 변수
+- `DATABASE_URL` — Postgres 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname?sslmode=require`)
+- (선택) `ADMIN_PASSWORD` — 관리용 비밀번호(권장: 서버사이드로 관리)
+
+마이그레이션
+- 저장소에 `migrations/neon_init.sql`이 있습니다. Neon이나 `psql`을 사용해 수동으로 적용하세요.
+
+예: psql 사용 예 (PowerShell)
+```powershell
+# psql이 설치된 환경에서
+psql "${env:DATABASE_URL}" -f migrations/neon_init.sql
+```
+
+핵심 API 요약
+- `GET /api/boards` — 보드 목록
+- `GET /api/boards?id=<id>` — 단일 보드
+- `GET /api/boards?grid_x=<x>&grid_y=<y>` — 그리드 보드
+- `POST /api/boards` — 보드 생성
+- `POST /api/boards/grid/:x/:y/ensure` — 그리드 보장
+
+- `GET /api/posts?board_id=<id>` — 게시글 목록
+- `POST /api/posts` — 게시글 생성 (비밀번호는 서버에서 해시)
+- `PUT /api/posts` — 게시글 수정
+- `DELETE /api/posts?id=<id>` — 게시글 삭제(비밀번호 검증)
+
+지도/클라이언트 노트
+- 맵 모드: `osm`(OSM 래스터), `sat`(예: Esri 래스터), `globe`(MapLibre globe 스타일)
+- 선택된 모드는 로컬스토리지 키 `rasterMap2-state`에 저장됩니다(키 변경 시 클라이언트 전역 수정 필요).
+- 보드 오버레이(heatmap-like)는 API의 `posts_count` 값을 기반으로 색상을 보간해 반투명으로 표시합니다.
+
+주의 및 권장 작업
+- 타일 제공자(OSM, Esri 등)의 이용약관과 저작권 표기를 지켜야 합니다. 페이지에 attribution을 표시하세요.
+- 배포 전에 `migrations/neon_init.sql`을 적용하고 API가 정상 동작하는지 검증하세요.
+- (선택) 로컬스토리지 키를 `map-state`로 변경하려면 클라이언트 코드 전체를 함께 수정하세요.
 
 MapLibre (지도 라이브러리)
 -
@@ -42,136 +80,6 @@ MapLibre (지도 라이브러리)
     - 래스터 타일을 globe에 사용하는 것은 지도 품질이 환경에 따라 다를 수 있으므로, 더 나은 시각화가 필요하면 벡터 타일 + globe-friendly 스타일 사용을 권장합니다.
   - 변경 위치: 기본 타일 URL 또는 모드 동작을 변경하려면 `pages/map.js` 상단의 `createMap(mode)` 함수 내부의 `tiles`/`sources` 부분을 수정하세요.
    - 저작권/Attribution: OSM과 Esri 등 각 타일 제공자의 저작권 표기를 유지해야 합니다. README나 페이지 하단에 적절한 attribution을 표시하세요.
-
-
-환경 변수
--
-- `DATABASE_URL` — PostgreSQL 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname?sslmode=require`)
-- (선택) `ADMIN_PASSWORD` — 관리자 페이지 구현 시 사용
-
-로컬 개발 (PowerShell)
--
-1. 의존성 설치
-
-```powershell
-npm.cmd install
-```
-
-2. 환경변수(임시 세션 예)
-
-```powershell
-$env:DATABASE_URL = "postgresql://<user>:<pass>@<host>:<port>/<db>?sslmode=require"
-```
-
-3. 마이그레이션 실행 (DB 준비 필요)
-
-```powershell
-node scripts/migrate.js
-```
-
-4. 개발 서버 시작
-
-```powershell
-npm.cmd run dev
-```
-
-확인 URL
--
-- 보드: `http://localhost:3000/board?id=<BOARD_ID>` 또는 `http://localhost:3000/board?grid_x=<X>&grid_y=<Y>`
-- 레스터맵: `http://localhost:3000/map`
-# MaplibreBoardVercel
-
-간단 요약
-- Next.js 기반의 지도형 게시판 프로젝트입니다. MapLibre GL을 사용해 그리드 단위 보드를 시각화하고, 게시글 CRUD는 Next.js API Routes로 제공합니다. 운영 DB로 Neon/Postgres를 권장합니다.
-
-빠른 링크
-- 맵 페이지: `/map` (이전 `/rasterMap2`는 `/map`으로 리디렉트됨)
-
-핵심 기능
-- 맵 위에 그리드 단위 보드 표시(heatmap 스타일)
-- 그리드 클릭 → 보드 보장(생성) → `/board?grid_x=...&grid_y=...`로 이동
-- 게시글 CRUD: `/api/posts` (POST/GET/PUT/DELETE)
-- 보드 API: `/api/boards` (목록/단일/생성), 그리드 보장: `/api/boards/grid/:x/:y/ensure`
-
-프로젝트 구조 (요약)
-- `pages/`
-  - `pages/map.js` — MapLibre 기반 지도(모드 전환 포함)
-  - `pages/rasterMap2.js` — 호환 리디렉트 페이지(`/map`으로 이동)
-  - `pages/board.js` — 보드 페이지 (게시글 조회·작성·수정·삭제)
-  - `pages/admin.js` — 간단한 관리자 페이지
-  - `pages/api/boards.js` — 보드 목록/단일/생성 API
-  - `pages/api/boards/grid/[gridX]/[gridY]/ensure.js` — 그리드 보장(POST)
-  - `pages/api/posts.js` — 게시글 CRUD API
-- `lib/db.js` — `pg` Pool 전역 캐시(서버리스 친화적)
-- `migrations/neon_init.sql` — Postgres 스키마(boards, posts, 트리거 등)
-- `public/` — 정적 파일(랜딩 `index.html`, `icon.png`)
-- `package.json` — 스크립트 및 의존성
-
-환경 변수
-- `DATABASE_URL` — Postgres 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname?sslmode=require`)
-
-로컬 개발
-1) 의존성 설치
-
-```powershell
-npm install
-```
-
-2) (선택) 환경변수 설정 (PowerShell 예)
-
-```powershell
-$env:DATABASE_URL = "postgresql://<user>:<pass>@<host>:<port>/<db>?sslmode=require"
-```
-
-3) 개발 서버 실행
-
-```powershell
-npm run dev
-```
-
-마이그레이션
-- 저장소에 `migrations/neon_init.sql`이 있습니다. 이 SQL 파일을 Neon 또는 psql을 통해 적용하세요. (현재 `scripts/migrate.js`는 레포에 없을 수 있으므로 수동 적용 권장)
-
-예: psql (간단 예)
-
-```powershell
-# psql을 사용할 수 있는 환경에서
-psql "${env:DATABASE_URL}" -f migrations/neon_init.sql
-```
-
-핵심 API 요약
-- `GET /api/boards` — 보드 목록
-- `GET /api/boards?id=<id>` — 단일 보드
-- `GET /api/boards?grid_x=<x>&grid_y=<y>` — 그리드 보드
-- `POST /api/boards` — 보드 생성
-- `POST /api/boards/grid/:x/:y/ensure` — 그리드 보장
-
-- `GET /api/posts?board_id=<id>` — 게시글 목록
-- `POST /api/posts` — 게시글 생성 (비밀번호는 서버에서 SHA-256 해시)
-- `PUT /api/posts` — 게시글 수정
-- `DELETE /api/posts?id=<id>` — 게시글 삭제(비밀번호 검증)
-
-데이터베이스
-- `lib/db.js`는 `pg`의 `Pool`을 전역(`global.__pgPool`)에 캐시합니다. Vercel 같은 서버리스 환경에서 연결 수를 줄이기 위해 설계되었습니다.
-
-지도/클라이언트 노트
-- 맵 모드: `osm`(OSM 래스터), `sat`(예: Esri 래스터), `globe`(MapLibre globe 스타일)
-- 선택된 모드는 로컬스토리지 키 `rasterMap2-state`에 `mode`로 저장됩니다.
-- 보드 오버레이 색상은 API의 `posts_count` 값을 기반으로 보간됩니다.
-
-주의 및 권장 작업
-- 타일 제공자(OSM, Esri 등)의 이용약관과 저작권 표기를 지켜야 합니다. 페이지에 attribution 명시를 권장합니다。
-- 배포 전에 마이그레이션을 수동으로 적용하고 API가 정상 동작하는지 확인하세요。
-- (선택) `rasterMap2-state` 키를 `map-state` 같은 이름으로 변경하려면 클라이언트 코드 전체를 함께 수정하세요。
-
-도움이 필요하시면 알려주세요 — 마이그레이션 적용, Vercel 배포 설정, 또는 localStorage 키 일괄 변경을 도와드리겠습니다。
-
-COMMIT;
-```
-
-다음 작업(권장)
-- API: `BoardService` 수준의 비즈니스 로직(특히 비밀번호 해시/검증, 트랜잭션으로 posts_count 유지)을 Next.js API에 완전히 이식 및 테스트.
-- UI: 추가적인 반응형 스타일과 로딩 UX 개선.
 
 관리자 페이지 접근(현재 구현)
 -
