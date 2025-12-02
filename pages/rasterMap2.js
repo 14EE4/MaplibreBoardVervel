@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 
 export default function RasterMap2() {
   useEffect(() => {
-    // simple redirect to the new page
+    // 이전 주소를 '/map'으로 리다이렉트
     if (typeof window !== 'undefined') {
       window.location.replace('/map')
     }
