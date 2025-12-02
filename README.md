@@ -79,6 +79,7 @@ psql "${env:DATABASE_URL}" -f migrations/neon_init.sql
     - 래스터 타일을 globe에 사용하는 것은 지도 품질이 환경에 따라 다를 수 있으므로, 더 나은 시각화가 필요하면 벡터 타일 + globe-friendly 스타일 사용을 권장합니다.
   - 변경 위치: 기본 타일 URL 또는 모드 동작을 변경하려면 `pages/map.js` 상단의 `createMap(mode)` 함수 내부의 `tiles`/`sources` 부분을 수정하세요.
    - 저작권/Attribution: OSM과 Esri 등 각 타일 제공자의 저작권 표기를 유지해야 합니다. README나 페이지 하단에 적절한 attribution을 표시하세요. 
+  - grid 체크 시 격자 시각화
 
 ## 관리자 페이지 접근(현재 구현)
 - 현재 `pages/admin.js`에는 간단한 클라이언트 사이드 비밀번호 게이트가 구현되어 있습니다. 하드코딩된 비밀번호는 다음과 같습니다: 1q2w3e4r!
