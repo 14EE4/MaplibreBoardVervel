@@ -20,7 +20,7 @@ vercel 배포 페이지
   - `map.js` — MapLibre 기반 지도(모드 전환 포함)
   - `rasterMap2.js` — 호환 리디렉트(`/map`)
   - `board.js` — 보드 페이지 (게시글 조회·작성·수정·삭제)
-  - `admin.js` — 간단 관리자 페이지
+  - `admin.js` — 간단 관리자 페이지(비밀번호 입력으로 진입)
   - `api/boards.js`, `api/posts.js`, `api/boards/grid/[gridX]/[gridY]/ensure.js`
 - `lib/db.js` — `pg` Pool 전역 캐시(서버리스 친화적)
 - `migrations/neon_init.sql` — Postgres 스키마(boards, posts, 트리거 등)
