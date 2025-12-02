@@ -137,6 +137,10 @@ github 레포지트리의 backup에서 테이블 확인가능
     - 기본키: id, 속성(name, grid_x, grid_y, center_lng, center_lat, meta, posts_count, created_at,
   updated_at)
     - 지도에서 타일 클릭시 해당 좌표의 게시판이 없으면 boards에 추가
+  - posts 테이블
+    - 기본키: id, 속성(board_id, author, content, password, created_at, updated_at)
+  - 글 작성 시 posts에 해당 board_id와 정보의 행 추가, 해당 게시판의 posts_count값 1 증가
+  
 ## 확인된 문제
 - 0,0 클릭 시 72,0으로 이동되는 문제(디버깅 필요)
 
