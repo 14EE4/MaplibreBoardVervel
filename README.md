@@ -10,14 +10,14 @@ Next.js (페이지 + API Routes) 기반의 지도형 게시판 프로젝트입�
 
 핵심 상태(요약)
 -
-- 포팅된 기능: `board` 페이지, `rasterMap2` 페이지(맵 + 그리드), 게시글 CRUD API
+- 포팅된 기능: `board` 페이지, `map` 페이지(맵 + 그리드), 게시글 CRUD API
 - DB: Neon PostgreSQL (운영 DB)
 - 배포: Vercel (서버리스)
 
 핵심 파일/위치
 -
 - `pages/board.js` — 보드(게시판) UI 및 클라이언트 로직
-- `pages/rasterMap2.js` — MapLibre 기반 맵 + 그리드 뷰 및 보드 오버레이
+- `pages/map.js` — MapLibre 기반 맵 + 그리드 뷰 및 보드 오버레이
 - `pages/api/boards.js`, `pages/api/posts.js` — 보드·게시글 서버리스 API
 - `lib/db.js` — PostgreSQL 연결(Pool 재사용 패턴)
 - `migrations/postgres_create_tables.sql` — DB 스키마
@@ -25,22 +25,22 @@ Next.js (페이지 + API Routes) 기반의 지도형 게시판 프로젝트입�
 
 MapLibre (지도 라이브러리)
 -
-- 이 프로젝트는 MapLibre GL JS를 사용합니다. 클라이언트 지도 코드는 `pages/rasterMap2.js`(및 일부 `pages/*.js`)에 있으며, MapLibre 관련 CSS/JS는 `public/`의 정적 파일이나 CDN을 통해 로드됩니다.
-- 기본 타일/스타일: 레스터 맵은 OpenStreetMap (OSM) 타일을 기본으로 사용합니다 (예: `https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png`). 타일 공급자를 바꾸려면 `pages/rasterMap2.js` 안의 `style` 또는 `raster` 레이어 설정을 편집하세요. OSM을 사용할 경우 저작권 표기(Attribution)를 유지하세요.
+-- 이 프로젝트는 MapLibre GL JS를 사용합니다. 클라이언트 지도 코드는 `pages/map.js`(및 일부 `pages/*.js`)에 있으며, MapLibre 관련 CSS/JS는 `public/`의 정적 파일이나 CDN을 통해 로드됩니다.
+-- 기본 타일/스타일: 레스터 맵은 OpenStreetMap (OSM) 타일을 기본으로 사용합니다 (예: `https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png`). 타일 공급자를 바꾸려면 `pages/map.js` 안의 `style` 또는 `raster` 레이어 설정을 편집하세요. OSM을 사용할 경우 저작권 표기(Attribution)를 유지하세요.
 - 커스터마이즈 포인트:
-  - Map 초기 옵션: 중심 좌표, 줌, min/max zoom, bearing 등은 `pages/rasterMap2.js`에서 설정됩니다.
+  - Map 초기 옵션: 중심 좌표, 줌, min/max zoom, bearing 등은 `pages/map.js`에서 설정됩니다.
   - 타일/스타일 변경: `map.addSource`/`map.addLayer` 호출에서 `url` 또는 `tiles` 값을 교체합니다.
   - CSS: MapLibre의 기본 스타일은 `public/maplibre.css` 또는 페이지 내 `<link>`로 로드된 CSS를 통해 적용됩니다.
   - 성능/디바이스: 모바일 성능을 개선하려면 `antialias`, `pitchWithRotate` 등의 옵션을 조정하세요.
 
  - 맵 모드 전환 (Raster / Satellite / Globe)
-   - UI: `pages/rasterMap2.js`에 사용자 인터페이스(상단 우측 컨트롤)가 추가되어 기본 래스터( OpenStreetMap )와 위성(Satellite), 지구본(Globe) 모드 사이를 전환할 수 있습니다.
+  - UI: `pages/map.js`에 사용자 인터페이스(상단 우측 컨트롤)가 추가되어 기본 래스터( OpenStreetMap )와 위성(Satellite), 지구본(Globe) 모드 사이를 전환할 수 있습니다.
    - 기본값: 기본 모드는 OpenStreetMap(OSM) 래스터입니다. 사용자가 선택한 모드는 `localStorage`의 `rasterMap2-state`에 `mode`로 저장되어 새로고침 시에도 유지됩니다.
    - Satellite: 현재 구현은 Esri World Imagery(예: `https://server.arcgisonline.com/.../tile/{z}/{y}/{x}`)를 사용합니다. Esri 등의 타일 제공자는 이용약관/저작권이 있으니 상업적 사용 시 확인하세요.
   - Globe: `projection: 'globe'`를 사용해 지구본 투영을 시도합니다. 현재 구현은 MapLibre 데모의 globe 스타일을 사용합니다: `https://demotiles.maplibre.org/globe.json`.
     - 참고 예시(로컬/외부 스타일): `https://demotiles.maplibre.org/globe.json`.
     - 래스터 타일을 globe에 사용하는 것은 지도 품질이 환경에 따라 다를 수 있으므로, 더 나은 시각화가 필요하면 벡터 타일 + globe-friendly 스타일 사용을 권장합니다.
-   - 변경 위치: 기본 타일 URL 또는 모드 동작을 변경하려면 `pages/rasterMap2.js` 상단의 `createMap(mode)` 함수 내부의 `tiles`/`sources` 부분을 수정하세요.
+  - 변경 위치: 기본 타일 URL 또는 모드 동작을 변경하려면 `pages/map.js` 상단의 `createMap(mode)` 함수 내부의 `tiles`/`sources` 부분을 수정하세요.
    - 저작권/Attribution: OSM과 Esri 등 각 타일 제공자의 저작권 표기를 유지해야 합니다. README나 페이지 하단에 적절한 attribution을 표시하세요.
 
 
@@ -78,7 +78,7 @@ npm.cmd run dev
 확인 URL
 -
 - 보드: `http://localhost:3000/board?id=<BOARD_ID>` 또는 `http://localhost:3000/board?grid_x=<X>&grid_y=<Y>`
-- 레스터맵: `http://localhost:3000/rasterMap2`
+- 레스터맵: `http://localhost:3000/map`
 
 프로덕션 빌드 / Vercel 배포
 -
@@ -95,7 +95,7 @@ npm.cmd run dev
 지도 상태 유지 및 보드 가시화(Heatmap)
 -
 - 지도 뷰 상태 유지
-  - `pages/rasterMap2.js`는 사용자가 보고 있던 지도 상태(중심 좌표, 줌, 베어링 등)를 `localStorage`(`rasterMap2-state`)에 저장합니다.
+  - `pages/map.js`는 사용자가 보고 있던 지도 상태(중심 좌표, 줌, 베어링 등)를 `localStorage`(`rasterMap2-state`)에 저장합니다.
   - 지도 이동/줌/회전 이벤트에서 상태를 갱신하고, 페이지 로드 시 해당 상태가 있으면 복원합니다.
   - 초기화: 개발자 도구에서 `localStorage.removeItem('rasterMap2-state')`로 초기화할 수 있습니다.
 
@@ -103,7 +103,7 @@ npm.cmd run dev
   - 데이터: API에서 반환되는 각 보드의 `count` 또는 DB의 `posts_count`를 사용합니다.
   - 색상 매핑: 게시글 수를 0..1로 정규화한 값 `v`를 기준으로 `#3B82F6`(파랑) → `#EF4444`(빨강)으로 선형 보간합니다.
   - 불투명도: 기본 반투명(예: alpha 0.25~0.4)으로 설정하여 지도 타일을 가리지 않게 합니다.
-  - 조정 위치: `pages/rasterMap2.js`의 상수(스케일, 불투명도, 컬러)에서 커스터마이즈 가능합니다.
+  - 조정 위치: `pages/map.js`의 상수(스케일, 불투명도, 컬러)에서 커스터마이즈 가능합니다.
   - 주의: `posts_count`가 최신이어야 하므로 게시글 생성/삭제 시 서버가 `boards.posts_count`를 유지하도록 구현되어 있는지 확인하세요.
 
 API 요약
@@ -181,14 +181,14 @@ COMMIT;
 
 **현재 상태(요약)**
 - `pages/board.js` : `board.html`을 React로 포팅 — 게시글 조회/작성/수정/삭제(비밀번호 검증) 클라이언트 로직 포함.
-- `pages/rasterMap2.js` : `rasterMap2.html`을 React로 포팅 — MapLibre(래스터 타일) 기반 그리드 및 보드 오버레이, 그리드 클릭 시 보드 생성/열기 기능 포함.
+`pages/map.js` : `rasterMap2.html`을 React로 포팅 — MapLibre(래스터 타일) 기반 그리드 및 보드 오버레이, 그리드 클릭 시 보드 생성/열기 기능 포함.
 - DB: PostgreSQL(Neon) 사용 권장. 마이그레이션 파일은 `migrations/postgres_create_tables.sql`에 있음 (단일 `posts` 테이블 방식).
 - DB 유틸: `lib/db.js` (pg Pool 전역 캐시) — Vercel 같은 서버리스 환경에서 연결 관리용.
 
 **프로젝트 구조(핵심)**
 - `package.json` — Next.js, 스크립트, 의존성
 - `pages/` — Next.js 페이지 및 API 라우트
-  - `pages/board.js`, `pages/rasterMap2.js`
+  - `pages/board.js`, `pages/map.js`
   - `pages/api/boards.js`, `pages/api/posts.js` 등
 - `lib/db.js` — PostgreSQL 연결 풀
 - `migrations/postgres_create_tables.sql` — Postgres용 DDL
@@ -213,7 +213,7 @@ npm.cmd run dev
 ```
 4) 확인 URL
 - 보드 페이지: `http://localhost:3000/board?id=<BOARD_ID>`
-- 레스터 맵: `http://localhost:3000/rasterMap2`
+- 레스터 맵: `http://localhost:3000/map`
 
 DB 마이그레이션/구현 노트
 - 현재 `migrations/postgres_create_tables.sql`은 단일 `posts` 테이블과 `boards` 테이블을 생성합니다. `updated_at` 자동 갱신을 위한 트리거 함수도 포함되어 있습니다.
@@ -275,7 +275,7 @@ COMMIT;
 
 **지도 상태 유지 및 보드 가시화(Heatmap Overlay)**
 
-- **지도 뷰 상태 유지:** `pages/rasterMap2.js`는 사용자가 보고 있던 지도 상태(중심 좌표, 줌 레벨, 베어링 등)를 `localStorage`에 저장합니다. 기본 동작은 다음과 같습니다:
+-- **지도 뷰 상태 유지:** `pages/map.js`는 사용자가 보고 있던 지도 상태(중심 좌표, 줌 레벨, 베어링 등)를 `localStorage`에 저장합니다. 기본 동작은 다음과 같습니다:
   - 저장 키: `rasterMap2-state`
   - 저장 시점: 지도 이동/줌/회전 이벤트 발생 시 업데이트
   - 로드 시점: 페이지 마운트 시 `localStorage`에 저장된 값이 있으면 해당 상태로 초기화합니다.
@@ -283,11 +283,11 @@ COMMIT;
   - 초기화 방법: 개발자 도구에서 `localStorage.removeItem('rasterMap2-state')` 또는 응용 프로그램 코드에서 초기화 로직을 추가하세요.
 
 - **보드 기반 색상 오버레이(Heatmap-like):** 맵 위에 그려지는 각 그리드(보드)는 DB의 `posts_count`(또는 API가 반환하는 `count`) 값에 따라 반투명 색상으로 표시됩니다. 동작 방식 요약:
-  - 데이터 소스: `pages/rasterMap2.js`가 호출하는 `GET /api/boards` 또는 보드 리스트 API에서 각 보드의 `count`(또는 `posts_count`) 값을 사용합니다.
+  - 데이터 소스: `pages/map.js`가 호출하는 `GET /api/boards` 또는 보드 리스트 API에서 각 보드의 `count`(또는 `posts_count`) 값을 사용합니다.
   - 색상 매핑: 게시글 수를 최소값(min)과 최대값(max) 사이에서 정규화한 값 `v`(0..1)를 만든 후, `v=0`일 때 파란색(예: `#3B82F6`), `v=1`일 때 빨간색(예: `#EF4444`)을 선형 보간(interpolate)합니다.
   - 불투명도(알파): 기본적으로 0.25~0.4 사이의 반투명으로 설정하여 지도 타일을 가리지 않게 합니다(코드에서 `opacity` 상수로 조정 가능).
   - 시각적 효과: 게시글 수가 적으면 파란색(차가움), 많을수록 빨간색(뜨거움)으로 바뀌며, 색상은 그리드 단위로 채워집니다.
-  - 조정 포인트: `pages/rasterMap2.js`의 상수 또는 컬러/스케일 함수를 변경하여 최소/최대 컷오프, 컬러 스케일(hsl/rgb), 불투명도 등을 조절할 수 있습니다.
+  - 조정 포인트: `pages/map.js`의 상수 또는 컬러/스케일 함수를 변경하여 최소/최대 컷오프, 컬러 스케일(hsl/rgb), 불투명도 등을 조절할 수 있습니다.
 
 참고: 색상 오버레이가 보이려면 보드 테이블의 `posts_count`가 최신 상태여야 합니다. `POST /api/posts`나 게시물 삭제/수정 시 서버가 `boards.posts_count`를 갱신하도록 구현되어 있는지 확인하세요. 샘플 데이터로 테스트하려면 README의 샘플 SQL로 몇 개 보드를 삽입한 뒤 `posts_count` 값을 변경해 보세요.
 
