@@ -26,19 +26,6 @@ vercel 배포 페이지
 - `migrations/neon_init.sql` — Postgres 스키마(boards, posts, 트리거 등)
 - `public/` — 정적 파일(랜딩 `index.html`, `icon.png`)
 
-환경 변수
-- `DATABASE_URL` — Postgres 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname?sslmode=require`)
-- (선택) `ADMIN_PASSWORD` — 관리용 비밀번호(권장: 서버사이드로 관리)
-
-마이그레이션
-- 저장소에 `migrations/neon_init.sql`이 있습니다. Neon이나 `psql`을 사용해 수동으로 적용하세요.
-
-예: psql 사용 예 (PowerShell)
-```powershell
-# psql이 설치된 환경에서
-psql "${env:DATABASE_URL}" -f migrations/neon_init.sql
-```
-
 핵심 API 요약
 - `GET /api/boards` — 보드 목록
 - `GET /api/boards?id=<id>` — 단일 보드
