@@ -149,3 +149,7 @@ github 레포지트리의 backup에서 테이블 확인가능
 - 검색 기능: 지명 검색 → flyTo
 - 로그인 기능(ex: google)
 
+## 문제점, 해결
+ - board 주소(id, 좌표)
+  - 
+ - 
