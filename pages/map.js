@@ -269,7 +269,7 @@ export default function RasterMap2() {
   return (
     <>
       <Head>
-        <title>Raster Map</title>
+        <title>Board Map</title>
         <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.11.0/dist/maplibre-gl.css" />
         <script src="https://unpkg.com/maplibre-gl@5.11.0/dist/maplibre-gl.js"></script>
         <style>{`html, body, #map, #map-container { height: 100%; margin: 0; padding: 0; }
