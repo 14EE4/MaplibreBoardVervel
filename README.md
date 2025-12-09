@@ -30,12 +30,6 @@
 - `DATABASE_URL` — Postgres 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname?sslmode=require`)
 - (선택) `ADMIN_PASSWORD` — 관리용 비밀번호(권장: 서버사이드로 관리)
 
-예: psql 사용 예 (PowerShell)
-```powershell
-# psql이 설치된 환경에서
-psql "${env:DATABASE_URL}" -f migrations/neon_init.sql
-```
-
 ## 핵심 API 요약
 - `GET /api/boards` — 보드 목록
 - `GET /api/boards?id=<id>` — 단일 보드
