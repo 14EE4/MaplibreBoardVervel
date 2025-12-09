@@ -155,7 +155,7 @@ github 레포지트리의 backup에서 테이블 확인가능
     - id가 있으면 loadBoardById(id) → /api/boards?id=...로 단일 보드 조회 후 posts 로드.
     - 그렇지 않고 grid_x·grid_y 둘 다 있으면 loadBoardByGrid(grid_x, grid_y) → /api/boards?grid_x=...&grid_y=...로 조회 후 posts 로드.
  - 비밀번호 일치해도 작동 안됨
-  - 
+  - verify.js api: 비밀번호 검증 api (수정, 삭제 시 입력 비밀번호 해싱하여(sha256) db와 같으면 res.status(200).json({ ok: true }))
  - 클릭해도 게시판 안나옴
   - 커서를 크로스헤어로 변경
  - 새로고침하면 위치 초기화
