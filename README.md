@@ -49,7 +49,7 @@
 
 ## MapLibre (지도 라이브러리)
 이 프로젝트는 MapLibre GL JS를 사용합니다. 클라이언트 지도 코드는 `pages/map.js`(및 일부 `pages/*.js`)에 있으며, MapLibre 관련 CSS/JS는 `public/`의 정적 파일이나 CDN을 통해 로드됩니다.
-기본 타일/스타일: 레스터 맵은 OpenStreetMap (OSM) 타일을 기본으로 사용합니다 (예: `https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png`). 타일 공급자를 바꾸려면 `pages/map.js` 안의 `style` 또는 `raster` 레이어 설정을 편집하세요. OSM을 사용할 경우 저작권 표기(Attribution)를 유지하세요.
+기본 타일/스타일: 레스터 맵은 OpenStreetMap (OSM) 타일을 기본으로 사용합니다.
 - 커스터마이즈 포인트:
   - Map 초기 옵션: 중심 좌표, 줌, min/max zoom, bearing 등은 `pages/map.js`에서 설정됩니다.
   - 타일/스타일 변경: `map.addSource`/`map.addLayer` 호출에서 `url` 또는 `tiles` 값을 교체합니다.
