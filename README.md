@@ -150,12 +150,15 @@ github 레포지트리의 backup에서 테이블 확인가능
 - 로그인 기능(ex: google)
 
 ## 문제점, 해결
- - board 주소(id, 좌표)
-  - 
+ - board 주소 id, 좌표 둘 중 어느 url로 들어가도 게시판 나오게
+  - useRouter()로 id, grid_x, grid_y를 읽어와서 
+    - id가 있으면 loadBoardById(id) → /api/boards?id=...로 단일 보드 조회 후 posts 로드.
+    - 그렇지 않고 grid_x·grid_y 둘 다 있으면 loadBoardByGrid(grid_x, grid_y) → /api/boards?grid_x=...&grid_y=...로 조회 후 posts 로드.
  - 비밀번호 일치해도 작동 안됨
- 
+  - 
  - 클릭해도 게시판 안나옴
   - 커서를 크로스헤어로 변경
  - 새로고침하면 위치 초기화
   - 브라우저에 위치를 저장하여 유지되게
  - 게시판 정보 안나옴
+  - 
