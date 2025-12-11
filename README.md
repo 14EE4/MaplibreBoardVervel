@@ -371,7 +371,6 @@ COMMIT;
 
 ## 파비콘(favicon)
 - 사이트 아이콘은 `public/icon.png`로 추가되어 있으며, 정적 랜딩 페이지(`public/index.html`)와 Next.js 헤드(`pages/_app.js`)에 파비콘 링크가 설정되어 있습니다.
-- 일부 브라우저에서 파비콘이 나타나지 않으면 캐시 문제일 수 있으니 강력 새로고침(Ctrl+F5) 또는 시크릿 창에서 확인해 보세요.
 
 ## 지도 상태 유지 및 보드 가시화 (Heatmap Overlay)
 
