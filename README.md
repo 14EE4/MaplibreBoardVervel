@@ -1,46 +1,247 @@
 # MaplibreBoardVercel
 
 ## 간단 요약
-- Next.js(페이지 + API Routes) 기반의 지도형 게시판입니다. MapLibre GL을 사용해 그리드 단위 보드를 시각화하고 게시글 CRUD는 Next.js API Routes로 제공합니다. 운영 DB로 Neon/Postgres를 권장합니다.
+Next.js(페이지 + API Routes) 기반의 지도형 게시판입니다. MapLibre GL을 사용해 그리드 단위 보드를 시각화하고, 게시글 CRUD는 Next.js API Routes로 제공합니다. 운영 DB로 Neon/Postgres를 권장합니다.
 
-## vercel 배포 주소
+## Vercel 배포 주소
 - https://maplibreboard.vercel.app
 
 ## 빠른 링크
-- 맵 페이지: `/map` (이전 `/rasterMap2`는 `/map`으로 리디렉트됨)
+- 맵 페이지: `/map`
+- 보드(게시판) 페이지: `/board?id=<id>` 또는 `/board?grid_x=<x>&grid_y=<y>`
+- 관리자 페이지: `/admin` (클라이언트 사이드 게이트: 비밀번호 `1q2w3e4r!`)
+
+---
 
 ## 핵심 기능
-- 그리드 단위 보드 시각화(heatmap 스타일)
-- 그리드 클릭 → 보드 보장(생성) → `/board?grid_x=...&grid_y=...`로 이동
-- 게시글 CRUD: `/api/posts` (POST/GET/PUT/DELETE)
-- 보드 API: `/api/boards`, 그리드 보장: `/api/boards/grid/:x/:y/ensure`
 
-## 프로젝트 구조 (요약)
-- `pages/`
-	- `map.js` — MapLibre 기반 지도(모드 전환 포함)
-	- `rasterMap2.js` — 호환 리디렉트(`/map`)
-	- `board.js` — 보드 페이지 (게시글 조회·작성·수정·삭제)
-	- `admin.js` — 간단 관리자 페이지(클라이언트 사이드 게이트)
-	- `api/boards.js`, `api/posts.js`, `api/boards/grid/[gridX]/[gridY]/ensure.js`
-- `lib/db.js` — `pg` Pool 전역 캐시(서버리스 친화적)
-- `migrations/neon_init.sql` — Postgres 스키마(boards, posts, 트리거 등)
-- `public/` — 정적 파일(랜딩 `index.html`, `icon.png`)
+### 🗺️ 지도 (Map)
+- **MapLibre GL JS** 기반 인터랙티브 지도
+- **모드 전환:** OSM(래스터) → Satellite(위성) → Globe(지구본)
+- **상태 유지:** localStorage에 지도 뷰(중심, 줌, 베어링) 저장
+- **보드 시각화:** 게시물 수(posts_count) 기반 heatmap 스타일 오버레이
+  - 게시물 수 적음: 파란색 (`#3B82F6`)
+  - 게시물 수 많음: 빨간색 (`#EF4444`)
+  - 반투명도(opacity): 0.25~0.4
+
+### 🎯 그리드 & 보드 (Board)
+- **그리드 클릭:** 해당 좌표에 보드가 없으면 자동 생성 후 `/board?grid_x=...&grid_y=...`로 이동
+- **보드 정보 표시:**
+  - 이름, 그리드 좌표(X, Y)
+  - 게시물 수
+  - 중심 좌표(경도, 위도)
+- **게시글 CRUD:**
+  - **생성 (POST):** 이름(선택), 내용(필수), 비밀번호(선택)
+  - **조회 (GET):** 작성 시간 역순 정렬
+  - **수정 (PUT):** 비밀번호 검증 후 수정 (내용, 작성자만)
+  - **삭제 (DELETE):** 비밀번호 검증 필수
+  - **단축키:** Ctrl + Enter로 글 전송
+
+---
+
+## 프로젝트 구조
+
+```
+MaplibreBoardVercel/
+├── pages/
+│   ├── _app.js                          # Next.js 앱 진입점
+│   ├── map.js                           # 🗺️ MapLibre 지도 페이지 (모드 전환 포함)
+│   ├── rasterMap2.js                    # (리디렉트) /map으로 리디렉트
+│   ├── board.js                         # 📝 보드(게시판) 페이지 (게시글 CRUD)
+│   ├── admin.js                         # 🔐 관리자 페이지 (클라이언트 사이드 게이트)
+│   └── api/
+│       ├── boards.js                    # 보드 CRUD API
+│       │   ├── GET /api/boards          → 전체 보드 목록
+│       │   ├── GET /api/boards?id=...   → 단일 보드 (ID)
+│       │   ├── GET /api/boards?grid_x=...&grid_y=... → 단일 보드 (그리드)
+│       │   └── POST /api/boards         → 새 보드 생성
+│       ├── posts.js                     # 게시글 CRUD API
+│       │   ├── GET /api/posts?board_id=...  → 보드별 게시글 목록
+│       │   ├── POST /api/posts              → 새 게시글 생성
+│       │   ├── PUT /api/posts               → 게시글 수정
+│       │   └── DELETE /api/posts?id=...     → 게시글 삭제
+│       ├── posts/
+│       │   └── verify.js                # 게시글 비밀번호 검증 API
+│       │       └── POST /api/posts/verify → 비밀번호 검증
+│       └── boards/
+│           └── grid/
+│               └── [gridX]/
+│                   └── [gridY]/
+│                       └── ensure.js    # 그리드 보드 보장(자동 생성) API
+│                           └── POST /api/boards/grid/:x/:y/ensure
+├── lib/
+│   └── db.js                            # PostgreSQL 연결 풀 (서버리스 친화적)
+├── migrations/
+│   └── neon_init.sql                    # Postgres 스키마 + 초기 데이터
+├── public/
+│   ├── index.html                       # 정적 랜딩 페이지
+│   ├── icon.png                         # 파비콘
+│   └── ...
+├── .env.local                           # 로컬 환경변수 (git 무시)
+├── package.json
+├── next.config.js
+└── README.md                            # 이 파일
+```
+
+---
 
 ## 환경 변수
-- `DATABASE_URL` — Postgres 연결 문자열 (예: `postgresql://user:pass@host:5432/dbname?sslmode=require`)
-- (선택) `ADMIN_PASSWORD` — 관리용 비밀번호(권장: 서버사이드로 관리)
 
-## 핵심 API 요약
-- `GET /api/boards` — 보드 목록
-- `GET /api/boards?id=<id>` — 단일 보드
-- `GET /api/boards?grid_x=<x>&grid_y=<y>` — 그리드 보드
-- `POST /api/boards` — 보드 생성
-- `POST /api/boards/grid/:x/:y/ensure` — 그리드 보장
+### 필수
+- `DATABASE_URL` — Postgres 연결 문자열
+  ```
+  postgresql://user:password@host:5432/dbname?sslmode=require
+  ```
 
-- `GET /api/posts?board_id=<id>` — 게시글 목록
-- `POST /api/posts` — 게시글 생성 (비밀번호는 서버에서 해시)
-- `PUT /api/posts` — 게시글 수정
-- `DELETE /api/posts?id=<id>` — 게시글 삭제(비밀번호 검증)
+### 선택 (권장)
+- `ADMIN_PASSWORD` — 관리자 비밀번호 (현재 클라이언트 사이드: `1q2w3e4r!`)
+
+---
+
+## 핵심 API 상세 설명
+
+### 🏠 보드 API (`/api/boards`)
+
+#### GET 요청
+
+**1. 전체 보드 목록**
+```bash
+GET /api/boards
+```
+응답: 배열 (JSON)
+```json
+[
+  {
+    "id": 123,
+    "name": "grid_61_25",
+    "x": 61,
+    "y": 25,
+    "lng": 127.5,
+    "lat": 37.5,
+    "count": 5
+  }
+]
+```
+
+**2. ID로 단일 보드 조회**
+```bash
+GET /api/boards?id=123
+```
+응답: 객체 (JSON) 또는 404
+
+**3. 그리드 좌표로 단일 보드 조회**
+```bash
+GET /api/boards?grid_x=61&grid_y=25
+```
+응답: 객체 (JSON) 또는 404
+
+#### POST 요청
+
+**보드 생성**
+```bash
+POST /api/boards
+Content-Type: application/json
+
+{
+  "name": "my-board",
+  "grid_x": 61,
+  "grid_y": 25,
+  "center_lng": 127.5,
+  "center_lat": 37.5
+}
+```
+응답: 201 Created
+
+---
+
+### 📝 게시글 API (`/api/posts`)
+
+#### GET 요청
+
+**게시글 목록 조회**
+```bash
+GET /api/posts?board_id=123
+```
+응답: 배열 (시간 역순 정렬)
+
+#### POST 요청
+
+**게시글 생성**
+```bash
+POST /api/posts
+Content-Type: application/json
+
+{
+  "board_id": 123,
+  "author": "John",
+  "content": "Hello World",
+  "password": "mypassword"
+}
+```
+- `board_id`: 필수
+- `content`: 필수
+- `author`: 선택 (null 가능)
+- `password`: 선택 (미지정 시 null, 서버에서 SHA-256 해싱)
+
+응답: 201 Created
+
+#### PUT 요청
+
+**게시글 수정**
+```bash
+PUT /api/posts
+Content-Type: application/json
+
+{
+  "id": 1,
+  "author": "Jane",
+  "content": "Updated content",
+  "password": "mypassword"
+}
+```
+응답: 200 OK
+
+#### DELETE 요청
+
+**게시글 삭제**
+```bash
+DELETE /api/posts?id=1
+Content-Type: application/json
+
+{
+  "password": "mypassword"
+}
+```
+응답: 200 OK (`{ "ok": true }`) 또는 403 Forbidden
+
+---
+
+### 🔐 게시글 비밀번호 검증 API (`/api/posts/verify`)
+
+```bash
+POST /api/posts/verify
+Content-Type: application/json
+
+{
+  "id": 1,
+  "password": "mypassword"
+}
+```
+응답: 200 OK (`{ "ok": true }`) 또는 403 Forbidden
+
+**용도:** 수정/삭제 전 비밀번호 미리 검증 (UX 개선)
+
+---
+
+### 🎁 그리드 보드 자동 생성 API (`/api/boards/grid/:x/:y/ensure`)
+
+```bash
+POST /api/boards/grid/61/25/ensure
+```
+- 해당 그리드에 보드가 없으면 자동 생성
+- 이미 있으면 기존 보드 반환
+
+응답: 200/201 + 보드 객체
 
 ## 지도 / 클라이언트 노트
 - 맵 모드: `osm`(OSM 래스터), `sat`(예: Esri 래스터), `globe`(MapLibre globe 스타일)
