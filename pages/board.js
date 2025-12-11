@@ -290,6 +290,7 @@ export default function Board() {
       )}
       {boardMeta && (
         <div style={{ marginBottom: 12, padding: 8, border: '1px solid #eee', borderRadius: 6 }}>
+          <div><strong>보드 ID:</strong> {resolvedBoardId || boardMeta.id || '(알 수 없음)'}</div>
           <div><strong>이름:</strong> {boardMeta.name || '(이름 없음)'}</div>
           {((boardMeta.grid_x != null) || (boardMeta.x != null)) && ((boardMeta.grid_y != null) || (boardMeta.y != null)) && <div><strong>그리드:</strong> {(boardMeta.grid_x != null) ? boardMeta.grid_x : boardMeta.x}, {(boardMeta.grid_y != null) ? boardMeta.grid_y : boardMeta.y}</div>}
           {((boardMeta.posts_count != null) || (boardMeta.count != null)) && <div><strong>게시물 수:</strong> {(boardMeta.posts_count != null) ? boardMeta.posts_count : boardMeta.count}</div>}
