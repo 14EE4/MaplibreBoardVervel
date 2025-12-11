@@ -17,7 +17,7 @@ Next.js(페이지 + API Routes) 기반의 지도형 게시판입니다. MapLibre
 
 ### 🗺️ 지도 (Map)
 - **MapLibre GL JS** 기반 인터랙티브 지도
-- **모드 전환:** OSM(래스터) → Satellite(위성) → Globe(지구본)
+- **모드 전환:** OSM(기본), Satellite(위성), Globe(지구본)
 - **상태 유지:** localStorage에 지도 뷰(중심, 줌, 모드) 저장
 - **보드 시각화:** 게시물 수(posts_count) 기반 heatmap 스타일 오버레이
   - 게시물 수 적음: 파란색 (`#3B82F6`)
