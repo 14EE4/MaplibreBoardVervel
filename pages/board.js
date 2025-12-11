@@ -348,7 +348,7 @@ export default function Board() {
         ))}
       </div>
 
-      <p><a href="/">← Back</a></p>
+      <p><a href="/map">← Back</a></p>
     </main>
   )
 }
