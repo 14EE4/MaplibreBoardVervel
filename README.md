@@ -341,7 +341,7 @@ COMMIT;
 이 프로젝트는 MapLibre GL JS를 사용합니다. 클라이언트 지도 코드는 `pages/map.js`(및 일부 `pages/*.js`)에 있으며, MapLibre 관련 CSS/JS는 `public/`의 정적 파일이나 CDN을 통해 로드됩니다.
 기본 타일/스타일: 레스터 맵은 OpenStreetMap (OSM) 타일을 기본으로 사용합니다.
 - 커스터마이즈 포인트:
-  - Map 초기 옵션: 중심 좌표, 줌, min/max zoom, bearing 등은 `pages/map.js`에서 설정됩니다.
+  - Map 초기 옵션: 중심 좌표, 줌, min/max zoom, 모드 등은 `pages/map.js`에서 설정됩니다.
   - 타일/스타일 변경: `map.addSource`/`map.addLayer` 호출에서 `url` 또는 `tiles` 값을 교체합니다.
   - CSS: MapLibre의 기본 스타일은 `public/maplibre.css` 또는 페이지 내 `<link>`로 로드된 CSS를 통해 적용됩니다.
   - 성능/디바이스: 모바일 성능을 개선하려면 `antialias`, `pitchWithRotate` 등의 옵션을 조정하세요.
@@ -349,12 +349,11 @@ COMMIT;
  - 맵 모드 전환 (Raster / Satellite / Globe)
   - UI: `pages/map.js`에 사용자 인터페이스(상단 우측 컨트롤)가 추가되어 기본 래스터( OpenStreetMap )와 위성(Satellite), 지구본(Globe) 모드 사이를 전환할 수 있습니다.
    - 기본값: 기본 모드는 OpenStreetMap(OSM) 래스터입니다. 사용자가 선택한 모드는 `localStorage`의 `rasterMap2-state`에 `mode`로 저장되어 새로고침 시에도 유지됩니다.
-   - Satellite: 현재 구현은 Esri World Imagery(예: `https://server.arcgisonline.com/.../tile/{z}/{y}/{x}`)를 사용합니다. Esri 등의 타일 제공자는 이용약관/저작권이 있으니 상업적 사용 시 확인하세요.
+   - Satellite: 현재 구현은 Esri World Imagery(예: `https://server.arcgisonline.com/.../tile/{z}/{y}/{x}`)를 사용합니다.
   - Globe: `projection: 'globe'`를 사용해 지구본 투영을 시도합니다. 현재 구현은 MapLibre 데모의 globe 스타일을 사용합니다: `https://demotiles.maplibre.org/globe.json`.
     - 참고 예시(로컬/외부 스타일): `https://demotiles.maplibre.org/globe.json`.
     - 래스터 타일을 globe에 사용하는 것은 지도 품질이 환경에 따라 다를 수 있으므로, 더 나은 시각화가 필요하면 벡터 타일 + globe-friendly 스타일 사용을 권장합니다.
   - 변경 위치: 기본 타일 URL 또는 모드 동작을 변경하려면 `pages/map.js` 상단의 `createMap(mode)` 함수 내부의 `tiles`/`sources` 부분을 수정하세요.
-   - 저작권/Attribution: OSM과 Esri 등 각 타일 제공자의 저작권 표기를 유지해야 합니다. README나 페이지 하단에 적절한 attribution을 표시하세요. 
   - grid 체크 시 격자 시각화
 
 ## 관리자 페이지 접근(현재 구현)
@@ -375,7 +374,7 @@ COMMIT;
 ## 지도 상태 유지 및 보드 가시화 (Heatmap Overlay)
 
 ### 지도 뷰 상태 유지
-`pages/map.js`는 사용자가 보고 있던 지도 상태(중심 좌표, 줌 레벨, 모)를 `localStorage`에 저장합니다. 기본 동작은 다음과 같습니다:
+`pages/map.js`는 사용자가 보고 있던 지도 상태(중심 좌표, 줌 레벨, 모드)를 `localStorage`에 저장합니다. 기본 동작은 다음과 같습니다:
 - 저장 키: `rasterMap2-state`
 - 저장 시점: 지도 이동/줌/모드 변경 이벤트 발생 시 업데이트
 - 로드 시점: 페이지 마운트 시 `localStorage`에 저장된 값이 있으면 해당 상태로 초기화합니다.
