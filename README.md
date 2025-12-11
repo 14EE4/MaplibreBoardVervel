@@ -133,7 +133,34 @@ GET /api/boards?id=123
 ```bash
 GET /api/boards?grid_x=61&grid_y=25
 ```
-응답: 객체 (JSON) 또는 404
+응답: 객체 (JSON)
+```json
+{
+  "id": 123,
+  "name": "grid_61_25",
+  "x": 61,
+  "y": 25,
+  "lng": 127.5,
+  "lat": 37.5,
+  "count": 5
+}
+```
+또는 404 Not Found: `{"error": "not found"}`
+
+**사용 SQL:**
+```sql
+-- 전체 목록
+SELECT id, name, grid_x, grid_y, posts_count, center_lng, center_lat 
+FROM boards ORDER BY id
+
+-- ID로 조회
+SELECT id, name, grid_x, grid_y, posts_count, center_lng, center_lat 
+FROM boards WHERE id = $1
+
+-- 그리드 좌표로 조회
+SELECT id, name, grid_x, grid_y, posts_count, center_lng, center_lat 
+FROM boards WHERE grid_x = $1 AND grid_y = $2
+```
 
 #### POST 요청
 
@@ -152,6 +179,12 @@ Content-Type: application/json
 ```
 응답: 201 Created
 
+**사용 SQL:**
+```sql
+INSERT INTO boards(name, grid_x, grid_y, center_lng, center_lat, meta)
+VALUES($1,$2,$3,$4,$5) RETURNING id, name, grid_x, grid_y, center_lng, center_lat, meta
+```
+
 ---
 
 ### 📝 게시글 API (`/api/posts`)
@@ -163,6 +196,15 @@ Content-Type: application/json
 GET /api/posts?board_id=123
 ```
 응답: 배열 (시간 역순 정렬)
+
+**사용 SQL:**
+```sql
+-- 보드별 게시글
+SELECT * FROM posts WHERE board_id = $1 ORDER BY created_at DESC
+
+-- 전체 게시글
+SELECT * FROM posts ORDER BY created_at DESC
+```
 
 #### POST 요청
 
@@ -185,6 +227,15 @@ Content-Type: application/json
 
 응답: 201 Created
 
+**사용 SQL (트랜잭션):**
+```sql
+BEGIN;
+INSERT INTO posts (board_id, author, content, password) 
+VALUES($1,$2,$3,$4) RETURNING *;
+UPDATE boards SET posts_count = posts_count + 1 WHERE id = $1;
+COMMIT;
+```
+
 #### PUT 요청
 
 **게시글 수정**
@@ -201,6 +252,12 @@ Content-Type: application/json
 ```
 응답: 200 OK
 
+**사용 SQL:**
+```sql
+UPDATE posts SET author=$1, content=$2, password=$3, updated_at=now() 
+WHERE id=$4 RETURNING *
+```
+
 #### DELETE 요청
 
 **게시글 삭제**
@@ -213,6 +270,18 @@ Content-Type: application/json
 }
 ```
 응답: 200 OK (`{ "ok": true }`) 또는 403 Forbidden
+
+**사용 SQL (트랜잭션):**
+```sql
+-- 비밀번호 확인
+SELECT password, board_id FROM posts WHERE id = $1;
+
+-- 삭제 및 카운트 감소
+BEGIN;
+DELETE FROM posts WHERE id=$1 RETURNING *;
+UPDATE boards SET posts_count = GREATEST(posts_count - 1, 0) WHERE id = $1;
+COMMIT;
+```
 
 ---
 
@@ -231,6 +300,11 @@ Content-Type: application/json
 
 **용도:** 수정/삭제 전 비밀번호 미리 검증 (UX 개선)
 
+**사용 SQL:**
+```sql
+SELECT password FROM posts WHERE id = $1
+```
+
 ---
 
 ### 🎁 그리드 보드 자동 생성 API (`/api/boards/grid/:x/:y/ensure`)
@@ -242,6 +316,20 @@ POST /api/boards/grid/61/25/ensure
 - 이미 있으면 기존 보드 반환
 
 응답: 200/201 + 보드 객체
+
+**사용 SQL (트랜잭션):**
+```sql
+-- 기존 보드 확인
+SELECT id, meta FROM boards WHERE grid_x = $1 AND grid_y = $2 LIMIT 1;
+
+-- 없으면 생성
+BEGIN;
+INSERT INTO boards(name, grid_x, grid_y, center_lng, center_lat, meta) 
+VALUES($1,$2,$3,$4,$5,$6) RETURNING id;
+COMMIT;
+```
+
+---
 
 ## 지도 / 클라이언트 노트
 - 맵 모드: `osm`(OSM 래스터), `sat`(예: Esri 래스터), `globe`(MapLibre globe 스타일)
