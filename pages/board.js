@@ -56,7 +56,9 @@ export default function Board() {
     setLoading(true)
     try {
       // use centralized posts API which accepts a board_id query param
-      const res = await fetch(`/api/posts?board_id=${encodeURIComponent(boardId)}`)
+      // cache bust + no-store to avoid stale list right after 작성
+      const url = `/api/posts?board_id=${encodeURIComponent(boardId)}&t=${Date.now()}`
+      const res = await fetch(url, { cache: 'no-store' })
       const list = await res.json()
       setPosts(Array.isArray(list) ? list : [])
       setMetaText('')
