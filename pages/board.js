@@ -161,7 +161,12 @@ export default function Board() {
       console.log('post success', body)
       setContent('')
       setPostPassword('')
-      loadPosts(resolvedBoardId)
+      try {
+        // 새 글 작성 후 전체 페이지 새로고침으로 최신 상태 반영
+        window.location.reload()
+      } catch (e) {
+        loadPosts(resolvedBoardId)
+      }
     } catch (err) {
       console.error('post failed', err)
       alert('작성 실패. 콘솔을 확인하세요.')
